@@ -1,0 +1,650 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useMemo } from "react";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Switch,
+  FormControlLabel,
+  Paper,
+  IconButton,
+  Autocomplete,
+  Collapse,
+  Divider,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  type SelectChangeEvent,
+  useMediaQuery,
+} from "@mui/material";
+import dayjs, { Dayjs } from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import {
+  ExpandLess,
+  ExpandMore,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
+import { useThemeContext } from "../../context/ThemeContext";
+import { getPatientStyles, TypedButton } from "../../themes/theme";
+import useDebounce from "../../components/Debounce";
+interface IPatient {
+  _id?: string;
+  patientId?: string;
+  fullName: string;
+  email?: string;
+  gender?: string;
+  dob?: Dayjs | null;
+  bloodGroup?: string;
+  contact: { phone: string; address?: string };
+  allergies?: string[];
+  conditions?: string[];
+  medications?: string[];
+  createdAt?: string;
+}
+export default function PatientPage() {
+  const [patients, setPatients] = useState<IPatient[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<IPatient | null>(null);
+  const [createLogin, setCreateLogin] = useState(false);
+  const [filter, setFilter] = useState({
+    bloodGroup: "",
+    condition: "",
+    patientName: "",
+  });
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const patientsPerPage = 10;
+  const emptyForm: IPatient = {
+    fullName: "",
+    email: "",
+    gender: "",
+    dob: null,
+    bloodGroup: "",
+    contact: { phone: "", address: "" },
+    allergies: [],
+    conditions: [],
+    medications: [],
+  };
+  const [formData, setFormData] = useState<IPatient>(emptyForm);
+  const { mode } = useThemeContext();
+  const styles = getPatientStyles(mode);
+  const isMobile = useMediaQuery("(max-width: 900px)");
+  const debouncedName = useDebounce(filter.patientName, 400);
+  const debouncedCondition = useDebounce(filter.condition, 400);
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+  const fetchPatients = async () => {
+    try {
+      const res = await fetch("`${import.meta.env.VITE_BACK_URL}/patient");
+      const data = await res.json();
+      setPatients(
+        (data.data || []).map((p: any) => ({
+          ...p,
+          dob: p.dob ? dayjs(p.dob) : null,
+        }))
+      );
+    } catch {
+      setPatients([]);
+    }
+  };
+  type InputEvent = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+  type SelectEvent = SelectChangeEvent<string>;
+  const handleChange = (e: InputEvent | SelectEvent) => {
+    const { name, value } = e.target;
+    if (name.startsWith("contact.")) {
+      const key = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        contact: { ...prev.contact, [key]: value },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.fullName.trim() || !formData.contact.phone.trim()) {
+      alert("Full name and phone are required.");
+      return;
+    }
+    const method = editingPatient ? "PUT" : "POST";
+    const url = editingPatient
+      ?`${import.meta.env.VITE_BACK_URL}/patient/${editingPatient._id}`
+      : `${import.meta.env.VITE_BACK_URL}/patient/add-patient`;
+    const payload = {
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.contact.phone,
+      address: formData.contact.address,
+      gender: formData.gender,
+      dob: formData.dob ? formData.dob.format("YYYY-MM-DD") : "",
+      bloodGroup: formData.bloodGroup,
+      allergies: formData.allergies || [],
+      conditions: formData.conditions || [],
+      medications: formData.medications || [],
+      createLogin,
+    };
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || "Error saving patient");
+      }
+      await fetchPatients();
+      resetForm();
+    } catch (err: any) {
+      alert(err.message || "Error saving patient");
+    }
+  };
+  const resetForm = () => {
+    setFormData(emptyForm);
+    setEditingPatient(null);
+    setShowModal(false);
+    setCreateLogin(false);
+  };
+  const handleEdit = (p: IPatient) => {
+    setEditingPatient(p);
+    setFormData({
+      ...p,
+      dob: p.dob ? dayjs(p.dob) : null,
+      contact: p.contact || { phone: "", address: "" },
+      allergies: p.allergies || [],
+      conditions: p.conditions || [],
+      medications: p.medications || [],
+    });
+    setShowModal(true);
+  };
+  const handleDelete = async (id?: string) => {
+    if (!id || !window.confirm("Are you sure you want to delete this patient?"))
+      return;
+    await fetch(`${import.meta.env.VITE_BACK_URL}/patient/${id}`, { method: "DELETE" });
+    fetchPatients();
+  };
+  const filteredPatients = useMemo(() => {
+    return patients.filter((p) => {
+      const nameMatch = p.fullName
+        ?.toLowerCase()
+        .includes(debouncedName.toLowerCase());
+      const bloodMatch =
+        !filter.bloodGroup || p.bloodGroup === filter.bloodGroup;
+      const conditionMatch =
+        !debouncedCondition ||
+        (Array.isArray(p.conditions) &&
+          p.conditions.some((c) =>
+            c.toLowerCase().includes(debouncedCondition.toLowerCase())
+          ));
+      return nameMatch && bloodMatch && conditionMatch;
+    });
+  }, [patients, debouncedName, debouncedCondition, filter.bloodGroup]);
+  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
+  const paginatedPatients = filteredPatients.slice(
+    (currentPage - 1) * patientsPerPage,
+    currentPage * patientsPerPage
+  );
+  return (
+    <Box sx={styles.container}>
+      <Typography variant="h5" sx={styles.title}>
+        Patient
+      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography variant="h6">Filters</Typography>
+          <IconButton
+            onClick={() => setFilterOpen((prev) => !prev)}
+            size="small"
+          >
+            {filterOpen ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
+        </Box>
+        <TypedButton
+          btntype="primary"
+          onClick={() => setShowModal(true)}
+          size="small"
+        >
+          + Add Patient
+        </TypedButton>
+      </Box>
+      <Collapse in={filterOpen} sx={{ py: 1 }}>
+        <Box sx={styles.filterBox}>
+          <Autocomplete
+            options={[...new Set(patients.map((p) => p.fullName))]}
+            value={filter.patientName || ""}
+            onChange={(_, value) =>
+              setFilter((f) => ({ ...f, patientName: value || "" }))
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Patient Name" size="small" />
+            )}
+            sx={styles.filterField}
+          />
+          <Autocomplete
+            options={[...new Set(patients.flatMap((p) => p.conditions || []))]}
+            value={filter.condition || ""}
+            onChange={(_, value) =>
+              setFilter((f) => ({ ...f, condition: value || "" }))
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Condition" size="small" />
+            )}
+            sx={styles.filterField}
+          />
+          <Autocomplete
+            options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]}
+            value={filter.bloodGroup || ""}
+            onChange={(_, value) =>
+              setFilter((f) => ({ ...f, bloodGroup: value || "" }))
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Blood Group" size="small" />
+            )}
+            sx={styles.filterField}
+          />
+          <TypedButton
+            btntype="delete"
+            size="small"
+            onClick={() =>
+              setFilter({ bloodGroup: "", condition: "", patientName: "" })
+            }
+          >
+            Clear
+          </TypedButton>
+        </Box>
+      </Collapse>
+      <Divider sx={{ mb: 2 }} />
+      <Typography variant="subtitle1" mb={1}>
+        Patients ({filteredPatients.length})
+      </Typography>
+      {isMobile ? (
+        <Box>
+          {paginatedPatients.length > 0 ? (
+            paginatedPatients.map((p, i) => (
+              <Paper key={p._id || i} sx={styles.patientCard}>
+                <Box sx={styles.cardHeader}>
+                  <Typography
+                    variant="subtitle2"
+                    noWrap
+                    sx={{
+                      flex: 1,
+                      textAlign: "left",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      fontWeight: "medium",
+                    }}
+                  >
+                    {(currentPage - 1) * patientsPerPage + i + 1}. {p.fullName}
+                  </Typography>
+                  <Box sx={styles.cardActions}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => handleEdit(p)}
+                      aria-label="Edit patient"
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDelete(p._id)}
+                      aria-label="Delete patient"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+                <Box sx={styles.cardContent}>
+                  <div>
+                    <strong>Blood Group:</strong> {p.bloodGroup}
+                  </div>
+                  <div>
+                    <strong>Phone:</strong> {p.contact?.phone || "—"}
+                  </div>
+                  <div>
+                    <strong>Conditions:</strong>{" "}
+                    {p.conditions?.join(", ") || "—"}
+                  </div>
+                </Box>
+              </Paper>
+            ))
+          ) : (
+            <Typography align="center" color="text.secondary" py={3}>
+              No patients found
+            </Typography>
+          )}
+        </Box>
+      ) : (
+        <Paper>
+          <Table>
+            <TableHead sx={styles.tableHead}>
+              <TableRow
+                sx={{
+                  "& .MuiTableCell-root": {
+                    py: 1,
+                    height: 24,
+                  },
+                }}
+              >
+                <TableCell>Id</TableCell>
+                <TableCell>Full Name</TableCell>
+                <TableCell>Gender</TableCell>
+                <TableCell>Blood Group</TableCell>
+                <TableCell>Phone</TableCell>
+                <TableCell>Conditions</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedPatients.length > 0 ? (
+                paginatedPatients.map((p, i) => (
+                  <TableRow
+                    key={p._id || i}
+                    sx={{
+                      "& .MuiTableCell-root": {
+                        py: 0.3,
+                        height: 24,
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      {(currentPage - 1) * patientsPerPage + i + 1}
+                    </TableCell>
+                    <TableCell>{p.fullName}</TableCell>
+                    <TableCell>{p.gender}</TableCell>
+                    <TableCell>{p.bloodGroup}</TableCell>
+                    <TableCell>{p.contact?.phone}</TableCell>
+                    <TableCell>{p.conditions?.join(", ")}</TableCell>
+                    <TableCell>
+                      <IconButton color="primary" onClick={() => handleEdit(p)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(p._id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No patients found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Paper>
+      )}
+      <Box sx={styles.paginationBox}>
+        <Typography variant="body2">
+          Showing {(currentPage - 1) * patientsPerPage + 1}–
+          {Math.min(currentPage * patientsPerPage, filteredPatients.length)} of{" "}
+          {filteredPatients.length}
+        </Typography>
+        <Box>
+          <Button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            Prev
+          </Button>
+          <Button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            Next
+          </Button>
+        </Box>
+      </Box>
+      <Dialog open={showModal} onClose={resetForm} fullWidth maxWidth="md">
+        <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>
+          {editingPatient ? "Edit Patient" : "Add New Patient"}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  name="fullName"
+                  label="Full Name"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  required
+                  margin="dense"
+                  size="small"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  type="email"
+                  fullWidth
+                  name="email"
+                  label="Email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  margin="dense"
+                  size="small"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  {/* <DatePicker
+                    label="Date of Birth"
+                    value={formData.dob}
+                    onChange={(newValue: Dayjs | null) =>
+                      setFormData((prev) => ({ ...prev, dob: newValue }))
+                    }
+                    slotProps={{
+                      textField: {
+                        margin: "dense",
+                        fullWidth: true,
+                        size: "small",
+                      },
+                    }}
+                  /> */}
+                  <DatePicker
+  label="Date of Birth"
+  value={formData.dob}
+  onChange={(newValue) =>
+    setFormData((prev) => ({
+      ...prev,
+      dob: (newValue as Dayjs | null),
+    }))
+  }
+  slotProps={{
+    textField: {
+      margin: "dense",
+      fullWidth: true,
+      size: "small",
+    },
+  }}
+/>
+
+                </LocalizationProvider>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth margin="dense" size="small">
+                  <InputLabel
+                    id="gender-label"
+                    sx={{
+                      width: "max-content",
+                      textAlign: "center",
+                    }}
+                  >
+                    Gender
+                  </InputLabel>
+                  <Select
+                    name="gender"
+                    labelId="gender-label"
+                    value={formData.gender || ""}
+                    label="Gender"
+                    onChange={handleChange}
+                  >
+                    <MenuItem value="Male">Male</MenuItem>
+                    <MenuItem value="Female">Female</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth margin="dense" size="small">
+                  <InputLabel id="blood-label">Blood Group</InputLabel>
+                  <Select
+                    name="bloodGroup"
+                    labelId="blood-label"
+                    value={formData.bloodGroup || ""}
+                    label="Blood Group"
+                    onChange={handleChange}
+                  >
+                    {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map(
+                      (bg) => (
+                        <MenuItem key={bg} value={bg}>
+                          {bg}
+                        </MenuItem>
+                      )
+                    )}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  name="contact.phone"
+                  label="Phone"
+                  value={formData.contact.phone}
+                  onChange={handleChange}
+                  required
+                  size="small"
+                  margin="dense"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  name="contact.address"
+                  label="Address"
+                  value={formData.contact.address}
+                  onChange={handleChange}
+                  margin="dense"
+                  size="small"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  name="allergies"
+                  label="Allergies (comma separated)"
+                  size="small"
+                  value={formData.allergies?.join(", ") || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      allergies: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  margin="dense"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  name="conditions"
+                  label="Conditions (comma separated)"
+                  size="small"
+                  value={formData.conditions?.join(", ") || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      conditions: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  margin="dense"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  name="medications"
+                  size="small"
+                  label="Medications (comma separated)"
+                  value={formData.medications?.join(", ") || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      medications: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  margin="dense"
+                />
+              </Grid>
+            </Grid>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={createLogin}
+                  onChange={() => setCreateLogin(!createLogin)}
+                />
+              }
+              label="Create Login for Patient"
+              sx={{ mt: 2 }}
+            />
+            <Box sx={styles.modalActions}>
+              <TypedButton btntype="delete" onClick={resetForm} size="small">
+                Cancel
+              </TypedButton>
+              {editingPatient ? (
+                <TypedButton
+                  btntype="secondary"
+                  size="small"
+                  onClick={handleSubmit}
+                >
+                  Update
+                </TypedButton>
+              ) : (
+                <TypedButton
+                  btntype="primary"
+                  size="small"
+                  onClick={handleSubmit}
+                >
+                  Save
+                </TypedButton>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
+}
