@@ -105,33 +105,33 @@ const colorMap: Record<ButtonType, Record<ThemeMode, string>> = {
     dark: "#eb2020",
   },
 };
-export const TypedButton = styled(Button)<{ btntype?: ButtonType }>(
-  ({ theme, btntype = "primary" }) => {
-    const mode = theme.palette.mode as ThemeMode;
-    const color = colorMap[btntype][mode];
-    return {
-      borderRadius: "8px",
-      textTransform: "none",
-      paddingLeft: "5px",
-      paddingRight: "5px",
-      fontWeight: 600,
-      transition: "0.25s ease",
-      border: `1px solid ${color}`,
-      background: "transparent",
-      color,
-      "&:hover": {
-        background: color,
-        color: "#fff",
-        borderColor: color,
-        transform: "translateY(-2px)",
-        boxShadow: theme.shadows[4],
-      },
-      "&:active": {
-        transform: "scale(1)",
-      },
-    };
-  }
-);
+export const TypedButton = styled(Button, {
+  shouldForwardProp: (prop) => prop !== "btntype",
+})<{ btntype?: ButtonType }>(({ theme, btntype = "primary" }) => {
+  const mode = theme.palette.mode as ThemeMode;
+  const color = colorMap[btntype][mode];
+  return {
+    borderRadius: "8px",
+    textTransform: "none",
+    paddingLeft: "5px",
+    paddingRight: "5px",
+    fontWeight: 600,
+    transition: "0.25s ease",
+    border: `1px solid ${color}`,
+    background: "transparent",
+    color,
+    "&:hover": {
+      background: color,
+      color: "#fff",
+      borderColor: color,
+      transform: "translateY(-2px)",
+      boxShadow: theme.shadows[4],
+    },
+    "&:active": {
+      transform: "scale(1)",
+    },
+  };
+});
 export const sidebarDrawer = (
   open: boolean,
   drawerWidth: number,

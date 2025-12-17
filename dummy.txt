@@ -1,737 +1,809 @@
-// import React, { useEffect, useState, useMemo } from "react";
-// import {
-//   Box,
-//   Button,
-//   Chip,
-//   Dialog,
-//   DialogActions,
-//   DialogContent,
-//   DialogTitle,
-//   Grid,
-//   TextField,
-//   Autocomplete,
-//   Typography,
-//   Table,
-//   TableHead,
-//   TableBody,
-//   TableCell,
-//   TableRow,
-//   Paper,
-//   IconButton,
-//   Collapse,
-// } from "@mui/material";
-// import CloseIcon from "@mui/icons-material/Close";
-// import { useThemeContext } from "../../context/ThemeContext";
-// import { getPatientStyles } from "../../themes/theme";
-// import { ExpandLess, ExpandMore } from "@mui/icons-material";
-// interface Medicine {
-//   name: string;
-//   dosage: string;
-//   frequency: string;
-//   duration: string;
-//   notes?: string;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useMemo } from "react";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Switch,
+  FormControlLabel,
+  Paper,
+  IconButton,
+  Autocomplete,
+  Collapse,
+  Divider,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  type SelectChangeEvent,
+  useMediaQuery,
+} from "@mui/material";
+import dayjs, { Dayjs } from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import {
+  ExpandLess,
+  ExpandMore,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
+import { useThemeContext } from "../../context/ThemeContext";
+import { getPatientStyles, TypedButton } from "../../themes/theme";
+import useDebounce from "../../components/Debounce";
+import { patientAdminSchema } from "../../schemas/patient.schema";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+// interface IPatient {
+//   _id?: string;
+//   patientId?: string;
+//   fullName: string;
+//   email?: string;
+//   gender?: string;
+//   dob?: Dayjs | null;
+//   bloodGroup?: string;
+//   contact: { phone: string; address?: string };
+//   allergies?: string[];
+//   conditions?: string[];
+//   medications?: string[];
+//   createdAt?: string;
 // }
-// interface Appointment {
-//   _id: string;
-//   patient: { _id: string; fullName: string };
-//   date: string;
-//   time: string;
-//   reason: string;
-//   status: string;
-//   prescription?: any;
-// }
-// const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
-//   const [appointments, setAppointments] = useState<Appointment[]>([]);
-//   const [filtered, setFiltered] = useState<Appointment[]>([]);
-//   const [selectedAppointment, setSelectedAppointment] =
-//     useState<Appointment | null>(null);
-//   const [viewPrescription, setViewPrescription] = useState<any>(null);
-//   // prescription fields
-//   const [diagnosis, setDiagnosis] = useState("");
-//   const [advice, setAdvice] = useState("");
-//   const [medicines, setMedicines] = useState<Medicine[]>([
-//     { name: "", dosage: "", frequency: "", duration: "" },
-//   ]);
-//   const [showModal, setShowModal] = useState(false);
-//   const { mode } = useThemeContext();
-//   const styles = getPatientStyles(mode);
-//   // Filters
-//   const [searchName, setSearchName] = useState("");
-//   const [appointmentDate, setAppointmentDate] = useState("");
-//   const [condition, setCondition] = useState("");
-//   const [filterOpen, setFilterOpen] = useState(false);
-//   // Debounce search
-//   const debouncedName = useMemo(() => {
-//     const timeout = setTimeout(() => {}, 300);
-//     return searchName;
-//   }, [searchName]);
-//   // Fetch appointments
-//   useEffect(() => {
-//     if (!doctorId) return;
-//     fetch(`http://localhost:1111/appointment/doctor/${doctorId}`)
-//       .then((res) => res.json())
-//       .then((data) => {
-//         setAppointments(data);
-//         setFiltered(data);
-//       })
-//       .catch(console.error);
-//   }, [doctorId]);
-//   console.log(filtered, "ffffffffffffffffff")
-//   // Filter logic
-//   useEffect(() => {
-//     let data = [...appointments];
-//     if (debouncedName.trim()) {
-//       data = data.filter((a) =>
-//         a.patient.fullName.toLowerCase().includes(debouncedName.toLowerCase())
-//       );
-//     }
-//     if (appointmentDate) {
-//       data = data.filter((a) => a.date === appointmentDate);
-//     }
-//     if (condition) {
-//       data = data.filter((a) => a.status === condition);
-//     }
-//     setFiltered(data);
-//   }, [debouncedName, appointmentDate, condition, appointments]);
-//   const fetchPrescription = async (appointmentId: string) => {
-//     try {
-//       const res = await fetch(
-//         `http://localhost:1111/prescription/appointment/${appointmentId}`
-//       );
-//       const data = await res.json();
-//       if (res.ok) setViewPrescription(data);
-//       else alert(data.error || "No prescription found");
-//     } catch (err) {
-//       console.error(err);
-//     }
-//   };
-//   const handleMedicineChange = (
-//     i: number,
-//     field: keyof Medicine,
-//     value: string
-//   ) => {
-//     const updated = [...medicines];
-//     updated[i] = { ...updated[i], [field]: value };
-//     setMedicines(updated);
-//   };
-//   const addMedicine = () =>
-//     setMedicines([
-//       ...medicines,
-//       { name: "", dosage: "", frequency: "", duration: "" },
-//     ]);
-//   const removeMedicine = (i: number) =>
-//     setMedicines(medicines.filter((_, index) => index !== i));
-//   const handleSavePrescription = async () => {
-//     if (!selectedAppointment || !diagnosis.trim()) return;
-//     const payload = {
-//       appointment: selectedAppointment._id,
-//       doctor: doctorId,
-//       patient: selectedAppointment.patient._id,
-//       diagnosis,
-//       advice,
-//       medicines: medicines.filter((m) => m.name.trim() !== ""),
-//     };
-//     try {
-//       const res = await fetch("http://localhost:1111/prescription", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(payload),
-//       });
-//       if (!res.ok) throw new Error("Failed to save prescription");
-//       setAppointments((prev) =>
-//         prev.map((apt) =>
-//           apt._id === selectedAppointment._id
-//             ? { ...apt, status: "Completed" }
-//             : apt
-//         )
-//       );
-//       setShowModal(false);
-//       setDiagnosis("");
-//       setAdvice("");
-//       setMedicines([{ name: "", dosage: "", frequency: "", duration: "" }]);
-//     } catch (err) {
-//       alert("Error saving prescription");
-//       console.error(err);
-//     }
-//   };
-//   return (
-//     <Box sx={styles.container}>
-//       <Typography variant="h5" sx={styles.title}>
-//         My Appointments
-//       </Typography>
-// <Box display="flex" alignItems="center" gap={1}>
-//           <Typography variant="h6">Filters</Typography>
-//           <IconButton
-//             onClick={() => setFilterOpen((prev) => !prev)}
-//             size="small"
-//           >
-//             {filterOpen ? <ExpandLess /> : <ExpandMore />}
-//           </IconButton>
-//         </Box>
-//       {/* FILTERS */}
-//        <Collapse in={filterOpen} sx={{ py: 1 }}>
-//               <Box sx={styles.filterBox}>
-//           <Autocomplete
-//             options={appointments.map((a) => a.patient.fullName)}
-//             onInputChange={(_, v) => setSearchName(v)}
-//             renderInput={(params) => (
-//               <TextField {...params} label="Patient Name" size="small" />
-//             )}
-//             fullWidth
-//             sx={{ minWidth: { sm: 180 } }}
-//           />
-//           <TextField
-//             label="Appointment Date"
-//             type="date"
-//             size="small"
-//             fullWidth
-//             InputLabelProps={{ shrink: true }}
-//             value={appointmentDate}
-//             onChange={(e) => setAppointmentDate(e.target.value)}
-//           />
-//           <Autocomplete
-//             options={appointments.map((a) => a.patient.conditions)}
-//             value={condition || ""}
-//             onChange={(_, v) => setCondition(v || "")}
-//             renderInput={(params) => (
-//               <TextField {...params} label="Condition" size="small" />
-//             )}
-//             fullWidth
-//             sx={{ minWidth: { sm: 180 } }}
-//           />
-//           <Button
-//             variant="outlined"
-//             color="error"
-//             size="small"
-//             onClick={() =>{
-//               setSearchName("")
-//               setAppointmentDate("")
-//               setCondition("")}
-//             }
-//           >
-//             Clear
-//           </Button>
-//           </Box></Collapse>
-//       {/* TABLE */}
-//       <Paper sx={{ p: 2 }}>
-//         <Table>
-//           <TableHead>
-//             <TableRow>
-//               <TableCell>Patient</TableCell>
-//               <TableCell>Date</TableCell>
-//               <TableCell>Time</TableCell>
-//               <TableCell>Reason</TableCell>
-//               <TableCell>Status</TableCell>
-//               <TableCell>Action</TableCell>
-//             </TableRow>
-//           </TableHead>
-//           <TableBody>
-//             {filtered.length > 0 ? (
-//               filtered.map((a) => (
-//                 <TableRow key={a._id}>
-//                   <TableCell>{a.patient.fullName}</TableCell>
-//                   <TableCell>{a.date}</TableCell>
-//                   <TableCell>{a.time}</TableCell>
-//                   <TableCell>{a.reason}</TableCell>
-//                   <TableCell>
-//                     <Chip
-//                       label={a.status}
-//                       color={
-//                         a.status === "Completed"
-//                           ? "success"
-//                           : a.status === "Pending"
-//                           ? "warning"
-//                           : "default"
-//                       }
-//                     />
-//                   </TableCell>
-                //   <TableCell>
-                //     {a.status !== "Completed" ? (
-                //       <Button
-                //         variant="outlined"
-                //         onClick={() => {
-                //           setSelectedAppointment(a);
-                //           setShowModal(true);
-                //         }}
-                //       >
-                //         Add Prescription
-                //       </Button>
-                //     ) : (
-                //       <Button
-                //         variant="contained"
-                //         color="success"
-                //         onClick={() => fetchPrescription(a._id)}
-                //       >
-                //         View Prescription
-                //       </Button>
-                //     )}
-                //   </TableCell>
-//                 </TableRow>
-//               ))
-//             ) : (
-//               <TableRow>
-//                 <TableCell colSpan={6} align="center">
-//                   No appointments found.
-//                 </TableCell>
-//               </TableRow>
-//             )}
-//           </TableBody>
-//         </Table>
-//       </Paper>
-//       {/* PRESCRIPTION MODAL */}
-//   <Dialog open={showModal} onClose={() => setShowModal(false)} fullWidth maxWidth="md">
-//     <DialogTitle>
-//       Prescription for {selectedAppointment?.patient.fullName}
-//       <IconButton
-//         sx={{ position: "absolute", right: 8, top: 8 }}
-//         onClick={() => setShowModal(false)}
-//       >
-//         <CloseIcon />
-//       </IconButton>
-//     </DialogTitle>
-//     <DialogContent>
-//       <TextField
-//         fullWidth
-//         label="Diagnosis *"
-//         multiline
-//         rows={2}
-//         value={diagnosis}
-//         onChange={(e) => setDiagnosis(e.target.value)}
-//         sx={{ my: 1 }}
-//       />
-//       <TextField
-//         fullWidth
-//         label="Doctor's Advice"
-//         multiline
-//         rows={2}
-//         value={advice}
-//         onChange={(e) => setAdvice(e.target.value)}
-//         sx={{ my: 1 }}
-//       />
-//       <Typography variant="subtitle1" mt={2}>
-//         Medicines
-//       </Typography>
-//       {medicines.map((med, index) => (
-//         <Grid container spacing={2} mt={1} key={index}>
-//           {["name", "dosage", "frequency", "duration"].map((field) => (
-//             <Grid size={{xs:6, sm:3}} key={field}>
-//               <TextField
-//                 fullWidth
-//                 label={field.toUpperCase()}
-//                 value={(med as any)[field]}
-//                 onChange={(e) =>
-//                   handleMedicineChange(
-//                     index,
-//                     field as keyof Medicine,
-//                     e.target.value
-//                   )
-//                 }
-//               />
-//             </Grid>
-//           ))}
-//           <Grid size={{xs:12, sm:1}}>
-//             {medicines.length > 1 && (
-//               <Button
-//                 color="error"
-//                 onClick={() => removeMedicine(index)}
-//               >
-//                 Remove
-//               </Button>
-//             )}
-//           </Grid>
-//         </Grid>
-//       ))}
-//       <Button onClick={addMedicine} sx={{ mt: 1 }}>
-//         + Add Medicine
-//       </Button>
-//     </DialogContent>
-//     <DialogActions>
-//       <Button onClick={() => setShowModal(false)}>Cancel</Button>
-//       <Button
-//         variant="contained"
-//         onClick={handleSavePrescription}
-//         disabled={!diagnosis.trim()}
-//       >
-//         Save
-//       </Button>
-//     </DialogActions>
-//   </Dialog>
-//   {/* VIEW PRESCRIPTION MODAL */}
-//   <Dialog
-//     open={!!viewPrescription}
-//     onClose={() => setViewPrescription(null)}
-//     fullWidth
-//   >
-//     <DialogTitle>Prescription Details</DialogTitle>
-//     <DialogContent>
-//       {viewPrescription ? (
-//         <>
-//           <p>
-//             <strong>Diagnosis:</strong> {viewPrescription.diagnosis}
-//           </p>
-//           <p>
-//             <strong>Advice:</strong> {viewPrescription.advice || "—"}
-//           </p>
-//           <Typography variant="subtitle1">Medicines:</Typography>
-//           <ul>
-//             {viewPrescription.medicines.map((m: Medicine, i: number) => (
-//               <li key={i}>
-//                 {m.name} — {m.dosage}, {m.frequency}, {m.duration}
-//               </li>
-//             ))}
-//           </ul>
-//         </>
-//       ) : (
-//         "Loading..."
-//       )}
-//     </DialogContent>
-//   </Dialog>
-//     </Box>
-//   );
-// };
-// export default DoctorAppointments;
 
-// import React, { useEffect, useState, useMemo } from "react";
-// import {
-//   Box,
-//   Button,
-//   Chip,
-//   Dialog,
-//   DialogActions,
-//   DialogContent,
-//   DialogTitle,
-//   Grid,
-//   TextField,
-//   Autocomplete,
-//   Typography,
-//   Table,
-//   TableHead,
-//   TableBody,
-//   TableCell,
-//   TableRow,
-//   Paper,
-//   IconButton,
-//   Collapse,
-//   Card,
-//   CardContent,
-//   useMediaQuery,
-// } from "@mui/material";
-// import CloseIcon from "@mui/icons-material/Close";
-// import { ExpandLess, ExpandMore } from "@mui/icons-material";
-// import { useTheme } from "@mui/material/styles";
-// import useDebounce from "../../components/Debounce";
-// interface Appointment {
-//   _id: string;
-//   patient: { _id: string; fullName: string; conditions?: string[] };
-//   date: string;
-//   time: string;
-//   reason: string;
-//   status: string;
-// }
-// const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
-//   const [appointments, setAppointments] = useState<Appointment[]>([]);
-//   const [filtered, setFiltered] = useState<Appointment[]>([]);
-//   const [filterOpen, setFilterOpen] = useState(false);
-//   // Filters
-//   const [searchName, setSearchName] = useState("");
-//   const [appointmentDate, setAppointmentDate] = useState("");
-//   const [condition, setCondition] = useState("");
-//   const theme = useTheme();
-//   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-//   const debouncedName = useDebounce(searchName, 400);
-//   const debouncedCondition = useDebounce(condition, 400);
-//   // Debounce search
-//   // Fetch appointments
-//   useEffect(() => {
-//     if (!doctorId) return;
-//     fetch(`http://localhost:1111/appointment/doctor/${doctorId}`)
-//       .then((res) => res.json())
-//       .then((data) => {
-//         setAppointments(data);
-//         setFiltered(data);
-//       })
-//       .catch(console.error);
-//   }, [doctorId]);
-//   // FILTER LOGIC
-//   useEffect(() => {
-//     let data = [...appointments];
-//     if (debouncedName.trim()) {
-//       data = data.filter((a) =>
-//         a.patient.fullName.toLowerCase().includes(debouncedName.toLowerCase())
-//       );
-//     }
-//     if (appointmentDate) {
-//       data = data.filter((a) => a.date === appointmentDate);
-//     }
-//     if (debouncedCondition) {
-//       data = data.filter((a) => a.patient.conditions?.includes(condition));
-//     }
-//     setFiltered(data);
-//   }, [debouncedName, appointmentDate, debouncedCondition, appointments]);
-//   // Extract list of unique conditions
-//   const conditionOptions = [
-//     ...new Set(appointments.flatMap((a) => a.patient.conditions || [])),
-//   ];
-//   return (
-//     <Box p={2}>
-//       <Typography variant="h5" mb={2}>
-//         My Appointments
-//       </Typography>
-//       {/* FILTERS TOGGLE */}
-//       <Box display="flex" alignItems="center" gap={1}>
-//         <Typography variant="h6">Filters</Typography>
-//         <IconButton size="small" onClick={() => setFilterOpen((p) => !p)}>
-//           {filterOpen ? <ExpandLess /> : <ExpandMore />}
-//         </IconButton>
-//       </Box>
-//       {/* FILTERS */}
-//       <Collapse in={filterOpen}>
-//         <Box display="flex" flexWrap="wrap" gap={2} my={2}>
-//           {/* Patient Name Filter */}
-//           <Autocomplete
-//             options={appointments.map((a) => a.patient.fullName)}
-//             value={searchName}
-//             onInputChange={(_, v) => setSearchName(v)}
-//             renderInput={(params) => (
-//               <TextField {...params} label="Patient Name" size="small" />
-//             )}
-//             sx={{ minWidth: 200 }}
-//           />
-//           {/* Appointment Date */}
-//           <TextField
-//             label="Appointment Date"
-//             type="date"
-//             size="small"
-//             value={appointmentDate}
-//             InputLabelProps={{ shrink: true }}
-//             onChange={(e) => setAppointmentDate(e.target.value)}
-//             sx={{ minWidth: 200 }}
-//           />
-//           {/* Patient Condition Autocomplete */}
-//           <Autocomplete
-//             options={conditionOptions}
-//             value={condition}
-//             onChange={(_, v) => setCondition(v || "")}
-//             renderInput={(params) => (
-//               <TextField {...params} label="Condition" size="small" />
-//             )}
-//             sx={{ minWidth: 200 }}
-//           />
-//           {/* Clear Button */}
-//           <Button
-//             variant="outlined"
-//             color="error"
-//             size="small"
-//             onClick={() => {
-//               setSearchName("");
-//               setAppointmentDate("");
-//               setCondition("");
-//             }}
-//           >
-//             Clear
-//           </Button>
-//         </Box>
-//       </Collapse>
-//       {/* LIST → TABLE ON DESKTOP / CARDS ON MOBILE */}
-//       {!isMobile ? (
-//         <Paper>
-//           <Table>
-//             <TableHead>
-//               <TableRow>
-//                 <TableCell>Patient</TableCell>
-//                 <TableCell>Condition</TableCell>
-//                 <TableCell>Date</TableCell>
-//                 <TableCell>Time</TableCell>
-//                 <TableCell>Status</TableCell>
-//               </TableRow>
-//             </TableHead>
-//             <TableBody>
-//               {filtered.length > 0 ? (
-//                 filtered.map((a) => (
-//                   <TableRow key={a._id}>
-//                     <TableCell>{a.patient.fullName}</TableCell>
-//                     {/* SHOW PATIENT CONDITIONS */}
-//                     <TableCell>
-//                       {a.patient.conditions?.map((c, i) => (
-//                         <Chip key={i} label={c} size="small" sx={{ mr: 0.5 }} />
-//                       ))}
-//                     </TableCell>
-//                     <TableCell>{a.date}</TableCell>
-//                     <TableCell>{a.time}</TableCell>
-//                     <TableCell>
-//                       <Chip
-//                         label={a.status}
-//                         color={
-//                           a.status === "Completed"
-//                             ? "success"
-//                             : a.status === "Pending"
-//                             ? "warning"
-//                             : "default"
-//                         }
-//                       />
-//                     </TableCell>
-//                   </TableRow>
-//                 ))
-//               ) : (
-//                 <TableRow>
-//                   <TableCell colSpan={5} align="center">
-//                     No appointments found.
-//                   </TableCell>
-//                 </TableRow>
-//               )}
-//             </TableBody>
-//           </Table>
-//         </Paper>
-//       ) : (
-//         // ============================
-//         // 📱 MOBILE CARD VIEW
-//         // ============================
-//         <Grid container spacing={2}>
-//           {filtered.map((a) => (
-//             <Grid item xs={12} key={a._id}>
-//               <Card sx={{ p: 1 }}>
-//                 <CardContent>
-//                   <Typography variant="h6">{a.patient.fullName}</Typography>
-//                   <Typography>
-//                     <strong>Date:</strong> {a.date}
-//                   </Typography>
-//                   <Typography>
-//                     <strong>Time:</strong> {a.time}
-//                   </Typography>
-//                   <Typography sx={{ my: 1 }}>
-//                     <strong>Conditions:</strong>
-//                   </Typography>
-//                   {a.patient.conditions?.map((c, i) => (
-//                     <Chip key={i} label={c} size="small" sx={{ mr: 0.5 }} />
-//                   ))}
-//                   <Box mt={1}>
-//                     <Chip
-//                       label={a.status}
-//                       color={
-//                         a.status === "Completed"
-//                           ? "success"
-//                           : a.status === "Pending"
-//                           ? "warning"
-//                           : "default"
-//                       }
-//                     />
-//                   </Box>
-//                 </CardContent>
-//               </Card>
-//             </Grid>
-//           ))}
-//         </Grid>
-//       )}
-//       <Dialog
-//         open={showModal}
-//         onClose={() => setShowModal(false)}
-//         fullWidth
-//         maxWidth="md"
-//       >
-//         <DialogTitle>
-//           Prescription for {selectedAppointment?.patient.fullName}
-//           <IconButton
-//             sx={{ position: "absolute", right: 8, top: 8 }}
-//             onClick={() => setShowModal(false)}
-//           >
-//             <CloseIcon />
-//           </IconButton>
-//         </DialogTitle>
-//         <DialogContent>
-//           <TextField
-//             fullWidth
-//             label="Diagnosis *"
-//             multiline
-//             rows={2}
-//             value={diagnosis}
-//             onChange={(e) => setDiagnosis(e.target.value)}
-//             sx={{ my: 1 }}
-//           />
-//           <TextField
-//             fullWidth
-//             label="Doctor's Advice"
-//             multiline
-//             rows={2}
-//             value={advice}
-//             onChange={(e) => setAdvice(e.target.value)}
-//             sx={{ my: 1 }}
-//           />
-//           <Typography variant="subtitle1" mt={2}>
-//             Medicines
-//           </Typography>
-//           {medicines.map((med, index) => (
-//             <Grid container spacing={2} mt={1} key={index}>
-//               {["name", "dosage", "frequency", "duration"].map((field) => (
-//                 <Grid size={{ xs: 6, sm: 3 }} key={field}>
-//                   <TextField
-//                     fullWidth
-//                     label={field.toUpperCase()}
-//                     value={(med as any)[field]}
-//                     onChange={(e) =>
-//                       handleMedicineChange(
-//                         index,
-//                         field as keyof Medicine,
-//                         e.target.value
-//                       )
-//                     }
-//                   />
-//                 </Grid>
-//               ))}
-//               <Grid size={{ xs: 12, sm: 1 }}>
-//                 {medicines.length > 1 && (
-//                   <Button color="error" onClick={() => removeMedicine(index)}>
-//                     Remove
-//                   </Button>
-//                 )}
-//               </Grid>
-//             </Grid>
-//           ))}
-//           <Button onClick={addMedicine} sx={{ mt: 1 }}>
-//             + Add Medicine
-//           </Button>
-//         </DialogContent>
-//         <DialogActions>
-//           <Button onClick={() => setShowModal(false)}>Cancel</Button>
-//           <Button
-//             variant="contained"
-//             onClick={handleSavePrescription}
-//             disabled={!diagnosis.trim()}
-//           >
-//             Save
-//           </Button>
-//         </DialogActions>
-//       </Dialog>
-//       {/* VIEW PRESCRIPTION MODAL */}
-//       <Dialog
-//         open={!!viewPrescription}
-//         onClose={() => setViewPrescription(null)}
-//         fullWidth
-//       >
-//         <DialogTitle>Prescription Details</DialogTitle>
-//         <DialogContent>
-//           {viewPrescription ? (
-//             <>
-//               <p>
-//                 <strong>Diagnosis:</strong> {viewPrescription.diagnosis}
-//               </p>
-//               <p>
-//                 <strong>Advice:</strong> {viewPrescription.advice || "—"}
-//               </p>
-//               <Typography variant="subtitle1">Medicines:</Typography>
-//               <ul>
-//                 {viewPrescription.medicines.map((m: Medicine, i: number) => (
-//                   <li key={i}>
-//                     {m.name} — {m.dosage}, {m.frequency}, {m.duration}
-//                   </li>
-//                 ))}
-//               </ul>
-//             </>
-//           ) : (
-//             "Loading..."
-//           )}
-//         </DialogContent>
-//       </Dialog>
-//     </Box>
-//   );
+interface IPatient {
+  _id?: string;
+  patientId?: string;
+  fullName: string;
+  email?: string;
+  gender?: string;
+  dob?: Dayjs | null;
+  bloodGroup?: string;
+  contact: {
+    phone: string;
+    address?: string;
+  };
+  allergies?: string[];
+  conditions?: string[];
+  medications?: string[];
+  createdAt?: string;
+}
+export default function PatientPage() {
+  const [patients, setPatients] = useState<IPatient[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<IPatient | null>(null);
+  const [createLogin, setCreateLogin] = useState(false);
+  const [filter, setFilter] = useState({
+    bloodGroup: "",
+    condition: "",
+    patientName: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const patientsPerPage = 10;
+  const emptyForm: IPatient = {
+    fullName: "",
+    email: "",
+    gender: "",
+    // dob: null,
+    dob: null as Dayjs | null,
+    bloodGroup: "",
+    contact: { phone: "", address: "" },
+    allergies: [],
+    conditions: [],
+    medications: [],
+  };
+  const [formData, setFormData] = useState<IPatient>(emptyForm);
+  const { mode } = useThemeContext();
+  const styles = getPatientStyles(mode);
+  const isMobile = useMediaQuery("(max-width: 900px)");
+  const debouncedName = useDebounce(filter.patientName, 400);
+  const debouncedCondition = useDebounce(filter.condition, 400);
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+  const fetchPatients = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACK_URL}/patient`);
+
+      console.log(res, "lllllllllllllllllllllll")
+      const data = await res.json();
+      setPatients(
+        (data.data || []).map((p: any) => ({
+          ...p,
+          dob: p.dob ? dayjs(p.dob) : null,
+        }))
+      );
+    } catch {
+      setPatients([]);
+    }
+  };
+  type InputEvent = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+  type SelectEvent = SelectChangeEvent<string>;
+  const handleChange = (e: InputEvent | SelectEvent) => {
+    const { name, value } = e.target;
+    if (name.startsWith("contact.")) {
+      const key = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        contact: { ...prev.contact, [key]: value },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+//   const validateForm = () => {
+//   try {
+//     patientAdminSchema.parse({
+//       ...formData,
+//       dob: formData.dob ? new Date(formData?.dob) : null,
+//     });
+
+//     setErrors({});
+//     return true;
+//   } catch (err: any) {
+//     const fieldErrors: Record<string, string> = {};
+
+//     err.errors.forEach((e: any) => {
+//       const path = e.path.join(".");
+//       fieldErrors[path] = e.message;
+//     });
+
+//     setErrors(fieldErrors);
+//     return false;
+//   }
 // };
-// export default DoctorAppointments;
+
+const validateForm = () => {
+  try {
+    patientAdminSchema.parse({
+      ...formData,
+      dob: formData.dob ? formData.dob.toDate() : null,
+    });
+
+    setErrors({});
+    return true;
+  } catch (err: any) {
+    const fieldErrors: Record<string, string> = {};
+
+    if (err.issues) {
+      err.issues.forEach((e: any) => {
+        const path = e.path.join(".");
+        fieldErrors[path] = e.message;
+      });
+    }
+
+    setErrors(fieldErrors);
+    return false;
+  }
+};
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    
+    e.preventDefault();
+    if (!formData.fullName.trim() || !formData.contact.phone.trim()) {
+      alert("Full name and phone are required.");
+      return;
+    }
+    if (!validateForm()) return;
+    const method = editingPatient ? "PUT" : "POST";
+    const url = editingPatient
+      ?`${import.meta.env.VITE_BACK_URL}/patient/${editingPatient._id}`
+      : `${import.meta.env.VITE_BACK_URL}/patient/add-patient`;
+    const payload = {
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.contact.phone,
+      address: formData.contact.address,
+      gender: formData.gender,
+      dob: formData.dob ? formData.dob.format("YYYY-MM-DD") : "",
+      bloodGroup: formData.bloodGroup,
+      allergies: formData.allergies || [],
+      conditions: formData.conditions || [],
+      medications: formData.medications || [],
+      createLogin,
+    };
+    console.log("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk", payload)
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || "Error saving patient");
+      }
+      await fetchPatients();
+      resetForm();
+    } catch (err: any) {
+      alert(err.message || "Error saving patient");
+    }
+  };
+  const resetForm = () => {
+    setFormData(emptyForm);
+    setEditingPatient(null);
+    setShowModal(false);
+    setCreateLogin(false);
+  };
+  const handleEdit = (p: IPatient) => {
+    setEditingPatient(p);
+    setFormData({
+      ...p,
+      dob: p.dob ? dayjs(p.dob) : null,
+      contact: p.contact || { phone: "", address: "" },
+      allergies: p.allergies || [],
+      conditions: p.conditions || [],
+      medications: p.medications || [],
+    });
+    setShowModal(true);
+  };
+  const handleDelete = async (id?: string) => {
+    if (!id || !window.confirm("Are you sure you want to delete this patient?"))
+      return;
+    await fetch(`${import.meta.env.VITE_BACK_URL}/patient/${id}`, { method: "DELETE" });
+    fetchPatients();
+  };
+  const filteredPatients = useMemo(() => {
+    return patients.filter((p) => {
+      const nameMatch = p.fullName
+        ?.toLowerCase()
+        .includes(debouncedName.toLowerCase());
+      const bloodMatch =
+        !filter.bloodGroup || p.bloodGroup === filter.bloodGroup;
+      const conditionMatch =
+        !debouncedCondition ||
+        (Array.isArray(p.conditions) &&
+          p.conditions.some((c) =>
+            c.toLowerCase().includes(debouncedCondition.toLowerCase())
+          ));
+      return nameMatch && bloodMatch && conditionMatch;
+    });
+  }, [patients, debouncedName, debouncedCondition, filter.bloodGroup]);
+  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
+  const paginatedPatients = filteredPatients.slice(
+    (currentPage - 1) * patientsPerPage,
+    currentPage * patientsPerPage
+  );
+  return (
+    <Box sx={styles.container}>
+      <Typography variant="h5" sx={styles.title}>
+        Patient
+      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography variant="h6">Filters</Typography>
+          <IconButton
+            onClick={() => setFilterOpen((prev) => !prev)}
+            size="small"
+          >
+            {filterOpen ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
+        </Box>
+        <TypedButton
+          btntype="primary"
+          onClick={() => setShowModal(true)}
+          size="small"
+        >
+          + Add Patient
+        </TypedButton>
+      </Box>
+      <Collapse in={filterOpen} sx={{ py: 1 }}>
+        <Box sx={styles.filterBox}>
+          <Autocomplete
+            options={[...new Set(patients.map((p) => p.fullName))]}
+            value={filter.patientName || ""}
+            onChange={(_, value) =>
+              setFilter((f) => ({ ...f, patientName: value || "" }))
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Patient Name" size="small" />
+            )}
+            sx={styles.filterField}
+          />
+          <Autocomplete
+            options={[...new Set(patients.flatMap((p) => p.conditions || []))]}
+            value={filter.condition || ""}
+            onChange={(_, value) =>
+              setFilter((f) => ({ ...f, condition: value || "" }))
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Condition" size="small" />
+            )}
+            sx={styles.filterField}
+          />
+          <Autocomplete
+            options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]}
+            value={filter.bloodGroup || ""}
+            onChange={(_, value) =>
+              setFilter((f) => ({ ...f, bloodGroup: value || "" }))
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Blood Group" size="small" />
+            )}
+            sx={styles.filterField}
+          />
+          <TypedButton
+            btntype="delete"
+            size="small"
+            onClick={() =>
+              setFilter({ bloodGroup: "", condition: "", patientName: "" })
+            }
+          >
+            Clear
+          </TypedButton>
+        </Box>
+      </Collapse>
+      <Divider sx={{ mb: 2 }} />
+      <Typography variant="subtitle1" mb={1}>
+        Patients ({filteredPatients.length})
+      </Typography>
+      {isMobile ? (
+        <Box>
+          {paginatedPatients.length > 0 ? (
+            paginatedPatients.map((p, i) => (
+              <Paper key={p._id || i} sx={styles.patientCard}>
+                <Box sx={styles.cardHeader}>
+                  <Typography
+                    variant="subtitle2"
+                    noWrap
+                    sx={{
+                      flex: 1,
+                      textAlign: "left",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      fontWeight: "medium",
+                    }}
+                  >
+                    {(currentPage - 1) * patientsPerPage + i + 1}. {p.fullName}
+                  </Typography>
+                  <Box sx={styles.cardActions}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => handleEdit(p)}
+                      aria-label="Edit patient"
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDelete(p._id)}
+                      aria-label="Delete patient"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+                <Box sx={styles.cardContent}>
+                  <div>
+                    <strong>Blood Group:</strong> {p.bloodGroup}
+                  </div>
+                  <div>
+                    <strong>Phone:</strong> {p.contact?.phone || "—"}
+                  </div>
+                  <div>
+                    <strong>Conditions:</strong>{" "}
+                    {p.conditions?.join(", ") || "—"}
+                  </div>
+                </Box>
+              </Paper>
+            ))
+          ) : (
+            <Typography align="center" color="text.secondary" py={3}>
+              No patients found
+            </Typography>
+          )}
+        </Box>
+      ) : (
+        <Paper>
+          <Table>
+            <TableHead sx={styles.tableHead}>
+              <TableRow
+                sx={{
+                  "& .MuiTableCell-root": {
+                    py: 1,
+                    height: 24,
+                  },
+                }}
+              >
+                <TableCell>Id</TableCell>
+                <TableCell>Full Name</TableCell>
+                <TableCell>Gender</TableCell>
+                <TableCell>Blood Group</TableCell>
+                <TableCell>Phone</TableCell>
+                <TableCell>Conditions</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedPatients.length > 0 ? (
+                paginatedPatients.map((p, i) => (
+                  <TableRow
+                    key={p._id || i}
+                    sx={{
+                      "& .MuiTableCell-root": {
+                        py: 0.3,
+                        height: 24,
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      {(currentPage - 1) * patientsPerPage + i + 1}
+                    </TableCell>
+                    <TableCell>{p.fullName}</TableCell>
+                    <TableCell>{p.gender}</TableCell>
+                    <TableCell>{p.bloodGroup}</TableCell>
+                    <TableCell>{p.contact?.phone}</TableCell>
+                    <TableCell>{p.conditions?.join(", ")}</TableCell>
+                    <TableCell>
+                      <IconButton color="primary" onClick={() => handleEdit(p)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(p._id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No patients found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Paper>
+      )}
+      <Box sx={styles.paginationBox}>
+        <Typography variant="body2">
+          Showing {(currentPage - 1) * patientsPerPage + 1}–
+          {Math.min(currentPage * patientsPerPage, filteredPatients.length)} of{" "}
+          {filteredPatients.length}
+        </Typography>
+        <Box>
+          <Button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            Prev
+          </Button>
+          <Button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            Next
+          </Button>
+        </Box>
+      </Box>
+      <Dialog open={showModal} onClose={resetForm} fullWidth maxWidth="md">
+        <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>
+          {editingPatient ? "Edit Patient" : "Add New Patient"}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                {/* <TextField
+                  fullWidth
+                  name="fullName"
+                  label="Full Name"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  required
+                  margin="dense"
+                  size="small"
+                /> */}
+                <TextField
+  fullWidth
+  name="fullName"
+  label="Full Name"
+  value={formData.fullName}
+  onChange={handleChange}
+  required
+  margin="dense"
+  size="small"
+  error={!!errors.fullName}
+  helperText={errors.fullName}
+/>
+
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                {/* <TextField
+                  type="email"
+                  fullWidth
+                  name="email"
+                  label="Email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  margin="dense"
+                  size="small"
+                /> */}
+                <TextField
+  type="email"
+  fullWidth
+  name="email"
+  label="Email"
+  value={formData.email}
+  onChange={handleChange}
+  margin="dense"
+  size="small"
+  error={!!errors.email}
+  helperText={errors.email}
+/>
+
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  {/* <DatePicker
+                    label="Date of Birth"
+                    value={formData.dob}
+                    onChange={(newValue: Dayjs | null) =>
+                      setFormData((prev) => ({ ...prev, dob: newValue }))
+                    }
+                    slotProps={{
+                      textField: {
+                        margin: "dense",
+                        fullWidth: true,
+                        size: "small",
+                      },
+                    }}
+                  /> */}
+                   <DatePicker
+  label="Date of Birth"
+  value={formData.dob}
+  onChange={(newValue) =>
+    setFormData((prev) => ({
+      ...prev,
+      dob: (newValue as Dayjs | null),
+    }))
+  }
+  maxDate={dayjs()}
+  slotProps={{
+    textField: {
+      margin: "dense",
+      fullWidth: true,
+      size: "small",
+    },
+  }}
+/> 
+
+
+                </LocalizationProvider>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth margin="dense" size="small">
+                  <InputLabel
+                    id="gender-label"
+                    sx={{
+                      width: "max-content",
+                      textAlign: "center",
+                    }}
+                  >
+                    Gender
+                  </InputLabel>
+                  {/* <Select
+                    name="gender"
+                    labelId="gender-label"
+                    value={formData.gender || ""}
+                    label="Gender"
+                    onChange={handleChange}
+                  > */}
+                  <Select
+  name="gender"
+  labelId="gender-label"
+  value={formData.gender || ""}
+  label="Gender"
+  onChange={handleChange}
+  error={!!errors.gender}
+>
+
+                    <MenuItem value="Male">Male</MenuItem>
+                    <MenuItem value="Female">Female</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
+                  </Select>
+                  {errors.gender && (
+  <Typography color="error" fontSize={12}>
+    {errors.gender}
+  </Typography>
+)}
+
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth margin="dense" size="small">
+                  <InputLabel id="blood-label">Blood Group</InputLabel>
+                  {/* <Select
+                    name="bloodGroup"
+                    labelId="blood-label"
+                    value={formData.bloodGroup || ""}
+                    label="Blood Group"
+                    onChange={handleChange}
+                  > */}
+                  <Select
+  name="bloodGroup"
+  labelId="blood-label"
+  value={formData.bloodGroup || ""}
+  label="Blood Group"
+  onChange={handleChange}
+  error={!!errors.bloodGroup}
+>
+
+                    {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map(
+                      (bg) => (
+                        <MenuItem key={bg} value={bg}>
+                          {bg}
+                        </MenuItem>
+                      )
+                    )}
+                  </Select>
+                  {errors.bloodGroup && (
+  <Typography color="error" fontSize={12}>
+    {errors.bloodGroup}
+  </Typography>
+)}
+
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                {/* <TextField
+                  fullWidth
+                  name="contact.phone"
+                  label="Phone"
+                  value={formData.contact.phone}
+                  onChange={handleChange}
+                  required
+                  size="small"
+                  margin="dense"
+                /> */}
+                <TextField
+  fullWidth
+  name="contact.phone"
+  label="Phone"
+  value={formData.contact.phone}
+  onChange={handleChange}
+  required
+  size="small"
+  margin="dense"
+  error={!!errors["contact.phone"]}
+  helperText={errors["contact.phone"]}
+/>
+
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                {/* <TextField
+                  fullWidth
+                  name="contact.address"
+                  label="Address"
+                  value={formData.contact.address}
+                  onChange={handleChange}
+                  margin="dense"
+                  size="small"
+                /> */}
+                <TextField
+  fullWidth
+  name="contact.address"
+  label="Address"
+  value={formData.contact.address}
+  onChange={handleChange}
+  margin="dense"
+  size="small"
+  error={!!errors["contact.address"]}
+  helperText={errors["contact.address"]}
+/>
+
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                
+                <TextField
+  fullWidth
+  name="allergies"
+  label="Allergies (comma separated)"
+  size="small"
+  value={formData.allergies?.join(", ") || ""}
+  onChange={(e) =>
+    setFormData((prev) => ({
+      ...prev,
+      allergies: e.target.value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean), // removes empty items
+    }))
+  }
+  margin="dense"
+/>
+
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  name="conditions"
+                  label="Conditions (comma separated)"
+                  size="small"
+                  value={formData.conditions?.join(", ") || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      conditions: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  margin="dense"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  name="medications"
+                  size="small"
+                  label="Medications (comma separated)"
+                  value={formData.medications?.join(", ") || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      medications: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  margin="dense"
+                />
+              </Grid>
+            </Grid>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={createLogin}
+                  onChange={() => setCreateLogin(!createLogin)}
+                />
+              }
+              label="Create Login for Patient"
+              sx={{ mt: 2 }}
+            />
+            <Box sx={styles.modalActions}>
+              <TypedButton btntype="delete" onClick={resetForm} size="small">
+                Cancel
+              </TypedButton>
+              {editingPatient ? (
+                <TypedButton
+                  btntype="secondary"
+                  size="small"
+                  onClick={handleSubmit}
+                >
+                  Update
+                </TypedButton>
+              ) : (
+                <TypedButton
+                  btntype="primary"
+                  size="small"
+                  onClick={handleSubmit}
+                >
+                  Save
+                </TypedButton>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
+}

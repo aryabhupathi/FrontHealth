@@ -35,8 +35,8 @@ interface IWorkingHour {
   isAvailable?: boolean;
 }
 interface IConsultationFee {
-  inPerson?: number;
-  online?: number;
+  inPerson?: string;
+  online?: string;
   currency?: string;
 }
 interface IContact {
@@ -49,20 +49,20 @@ export interface IDoctor {
   fullName: string;
   department: string;
   specialization: string[];
-  experience?: number;
+  experience?: string;
   qualification?: string;
   languagesSpoken?: string[];
-  about?: string;
   contact?: IContact;
   consultationFee?: IConsultationFee;
   workingHours?: IWorkingHour[];
-  licenseNumber?: string;
   accountStatus?: "pending" | "active" | "suspended";
 }
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
+import { FormAdminSchema } from "../../schemas/patient.schema";
+import { ZodError } from "zod";
 const weekDays = [
   "Monday",
   "Tuesday",
@@ -83,6 +83,7 @@ const DoctorPage: React.FC = () => {
     department: "",
     specialization: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [showModal, setShowModal] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<IDoctor | null>(null);
   const debouncedSearch = useDebounce(search, 500);
@@ -90,12 +91,11 @@ const DoctorPage: React.FC = () => {
     fullName: "",
     department: "",
     specialization: [""],
-    experience: undefined,
+    experience: "",
     qualification: "",
     languagesSpoken: [""],
-    about: "",
     contact: { phone: "", email: "" },
-    consultationFee: { inPerson: 0, online: 0, currency: "INR" },
+    consultationFee: { inPerson: "0", online: "0", currency: "INR" },
     workingHours: [
       {
         day: "Monday",
@@ -210,13 +210,12 @@ const DoctorPage: React.FC = () => {
       setFormData({
         fullName: "",
         department: "",
-        specialization: [""],
-        experience: undefined,
+        specialization: [],
+        experience: "",
         qualification: "",
-        languagesSpoken: [""],
-        about: "",
+        languagesSpoken: [],
         contact: { phone: "", email: "" },
-        consultationFee: { inPerson: 0, online: 0, currency: "INR" },
+        consultationFee: { inPerson: "0", online: "0", currency: "INR" },
         workingHours: [
           {
             day: "Monday",
@@ -230,8 +229,30 @@ const DoctorPage: React.FC = () => {
     }
     setShowModal(true);
   };
+  const validateForm = () => {
+    try {
+      FormAdminSchema.parse({
+        ...formData,
+      });
+      setErrors({});
+      return true;
+    } catch (err) {
+      const fieldErrors: Record<string, string> = {};
+      if (err instanceof ZodError) {
+        err.issues.forEach((issue) => {
+          const path = issue.path.join(".");
+          fieldErrors[path] = issue.message;
+        });
+      } else {
+        console.error("Unexpected validation error:", err);
+      }
+      setErrors(fieldErrors);
+      return false;
+    }
+  };
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!validateForm()) console.log("cde");
     const url = editingDoctor
       ? `${import.meta.env.VITE_BACK_URL}/doctor/${editingDoctor._id}`
       : `${import.meta.env.VITE_BACK_URL}/doctor`;
@@ -528,6 +549,8 @@ const DoctorPage: React.FC = () => {
                   required
                   margin="dense"
                   size="small"
+                  error={!!errors.fullName}
+                  helperText={errors.fullName}
                 />
                 <TextField
                   fullWidth
@@ -538,6 +561,8 @@ const DoctorPage: React.FC = () => {
                   required
                   margin="dense"
                   size="small"
+                  error={!!errors.department}
+                  helperText={errors.department}
                 />
                 <TextField
                   fullWidth
@@ -556,13 +581,15 @@ const DoctorPage: React.FC = () => {
                 />
                 <TextField
                   fullWidth
-                  type="number"
                   name="experience"
                   label="Experience (Years)"
                   value={formData.experience || ""}
                   onChange={handleChange}
-                  margin="dense"
+                  required
                   size="small"
+                  margin="dense"
+                  error={!!errors.experience}
+                  helperText={errors.experience}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -575,6 +602,8 @@ const DoctorPage: React.FC = () => {
                   }
                   margin="dense"
                   size="small"
+                  error={!!errors["contact.phone"]}
+                  helperText={errors["contact.phone"]}
                 />
                 <TextField
                   fullWidth
@@ -586,11 +615,12 @@ const DoctorPage: React.FC = () => {
                   }
                   margin="dense"
                   size="small"
+                  error={!!errors["contact.email"]}
+                  helperText={errors["contact.email"]}
                 />
                 <TextField
                   fullWidth
                   label="In-person Fee (₹)"
-                  type="number"
                   value={formData.consultationFee?.inPerson || ""}
                   onChange={(e) =>
                     handleNestedChange(
@@ -600,11 +630,12 @@ const DoctorPage: React.FC = () => {
                   }
                   size="small"
                   margin="dense"
+                  error={!!errors["consultationFee?.inPerson"]}
+                  helperText={errors["consultationFee?.inPerson"]}
                 />
                 <TextField
                   fullWidth
                   label="Online Fee (₹)"
-                  type="number"
                   value={formData.consultationFee?.online || ""}
                   onChange={(e) =>
                     handleNestedChange(
@@ -614,6 +645,8 @@ const DoctorPage: React.FC = () => {
                   }
                   size="small"
                   margin="dense"
+                  error={!!errors["consultationFee?.online"]}
+                  helperText={errors["consultationFee?.online"]}
                 />
               </Grid>
             </Grid>
@@ -627,9 +660,6 @@ const DoctorPage: React.FC = () => {
                     <Autocomplete
                       options={weekDays}
                       value={wh.day || ""}
-                      // onChange={(_, value) =>
-                      //   handleWorkingHourChange(i, "day", value)
-                      // }
                       onChange={(_, value) =>
                         handleWorkingHourChange(i, "day", value ?? "")
                       }
@@ -639,29 +669,21 @@ const DoctorPage: React.FC = () => {
                           label="Day"
                           size="small"
                           margin="dense"
+                          error={!!errors.workingHours}
+                          helperText={errors.workingHours}
                         />
                       )}
                     />
                   </Grid>
                   <Grid size={{ xs: 6, md: 3 }}>
-                    {/* <TimePicker
+                    <TimePicker
                       label="Start Time"
                       value={wh.startTime ? dayjs(wh.startTime, "HH:mm") : null}
                       onChange={(val) =>
                         handleWorkingHourChange(
                           i,
                           "startTime",
-                          val ? val.format("HH:mm") : ""
-                        )
-                      } */}
-                    {/* <TimePicker<Dayjs>
-                      label="Start Time"
-                      value={wh.startTime ? dayjs(wh.startTime, "HH:mm") : null}
-                      onChange={(val) =>
-                        handleWorkingHourChange(
-                          i,
-                          "startTime",
-                          val ? val.format("HH:mm") : ""
+                          val ? (val as Dayjs).format("HH:mm") : ""
                         )
                       }
                       slotProps={{
@@ -671,36 +693,17 @@ const DoctorPage: React.FC = () => {
                           size: "small",
                         },
                       }}
-                    /> */}
-                    <TimePicker
-  label="Start Time"
-  value={wh.startTime ? dayjs(wh.startTime, "HH:mm") : null}
-  onChange={(val) =>
-    handleWorkingHourChange(
-      i,
-      "startTime",
-      val ? (val as Dayjs).format("HH:mm") : ""
-    )
-  }
-  slotProps={{
-    textField: {
-      fullWidth: true,
-      margin: "dense",
-      size: "small",
-    },
-  }}
-/>
-
+                    />
                   </Grid>
                   <Grid size={{ xs: 6, md: 3 }}>
-                    {/* <TimePicker
+                    <TimePicker
                       label="End Time"
                       value={wh.endTime ? dayjs(wh.endTime, "HH:mm") : null}
                       onChange={(val) =>
                         handleWorkingHourChange(
                           i,
                           "endTime",
-                          val ? val.format("HH:mm") : ""
+                          val ? (val as Dayjs).format("HH:mm") : ""
                         )
                       }
                       slotProps={{
@@ -710,27 +713,7 @@ const DoctorPage: React.FC = () => {
                           size: "small",
                         },
                       }}
-                    /> */}
-
-                    <TimePicker
-  label="End Time"
-  value={wh.endTime ? dayjs(wh.endTime, "HH:mm") : null}
-  onChange={(val) =>
-    handleWorkingHourChange(
-      i,
-      "endTime",
-      val ? (val as Dayjs).format("HH:mm") : ""
-    )
-  }
-  slotProps={{
-    textField: {
-      fullWidth: true,
-      margin: "dense",
-      size: "small",
-    },
-  }}
-/>
-
+                    />
                   </Grid>
                   <Grid size={{ xs: 12, md: 2 }}>
                     <TypedButton

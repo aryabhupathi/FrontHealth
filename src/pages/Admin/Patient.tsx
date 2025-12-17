@@ -31,7 +31,6 @@ import {
 import dayjs, { Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
   ExpandLess,
   ExpandMore,
@@ -41,6 +40,9 @@ import {
 import { useThemeContext } from "../../context/ThemeContext";
 import { getPatientStyles, TypedButton } from "../../themes/theme";
 import useDebounce from "../../components/Debounce";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { ZodError } from "zod";
+import { FormAdminSchema } from "../../schemas/patient.schema";
 interface IPatient {
   _id?: string;
   patientId?: string;
@@ -49,10 +51,13 @@ interface IPatient {
   gender?: string;
   dob?: Dayjs | null;
   bloodGroup?: string;
-  contact: { phone: string; address?: string };
-  allergies?: string[];
-  conditions?: string[];
-  medications?: string[];
+  contact: {
+    phone: string;
+    address?: string;
+  };
+  allergies: string[];
+  conditions: string[];
+  medications: string[];
   createdAt?: string;
 }
 export default function PatientPage() {
@@ -65,6 +70,8 @@ export default function PatientPage() {
     condition: "",
     patientName: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [filterOpen, setFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const patientsPerPage = 10;
@@ -72,7 +79,7 @@ export default function PatientPage() {
     fullName: "",
     email: "",
     gender: "",
-    dob: null,
+    dob: null as Dayjs | null,
     bloodGroup: "",
     contact: { phone: "", address: "" },
     allergies: [],
@@ -90,7 +97,8 @@ export default function PatientPage() {
   }, []);
   const fetchPatients = async () => {
     try {
-      const res = await fetch("`${import.meta.env.VITE_BACK_URL}/patient");
+      const res = await fetch(`${import.meta.env.VITE_BACK_URL}/patient`);
+      console.log(res, "lllllllllllllllllllllll");
       const data = await res.json();
       setPatients(
         (data.data || []).map((p: any) => ({
@@ -116,20 +124,43 @@ export default function PatientPage() {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
+  const validateForm = () => {
+    try {
+      console.log("aaaaaaaaaaaaaaaaaa");
+      FormAdminSchema.parse({
+        ...formData,
+        dob: formData.dob ? formData.dob.toDate() : null,
+      });
+      setErrors({});
+      console.log(errors, "wwwwwwwwwwwww");
+      return true;
+    } catch (err) {
+      const fieldErrors: Record<string, string> = {};
+      if (err instanceof ZodError) {
+        err.issues.forEach((issue) => {
+          const path = issue.path.join(".");
+          fieldErrors[path] = issue.message;
+        });
+      } else {
+        console.error("Unexpected validation error:", err);
+      }
+      setErrors(fieldErrors);
+      return false;
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName.trim() || !formData.contact.phone.trim()) {
-      alert("Full name and phone are required.");
-      return;
-    }
+    if (isSubmitting) return;
+    if (!validateForm()) console.log("abc");
+    setIsSubmitting(true);
     const method = editingPatient ? "PUT" : "POST";
     const url = editingPatient
-      ?`${import.meta.env.VITE_BACK_URL}/patient/${editingPatient._id}`
+      ? `${import.meta.env.VITE_BACK_URL}/patient/${editingPatient._id}`
       : `${import.meta.env.VITE_BACK_URL}/patient/add-patient`;
     const payload = {
-      fullName: formData.fullName,
+      fullName: formData.fullName.trim(),
       email: formData.email,
-      phone: formData.contact.phone,
+      phone: formData.contact.phone.trim(),
       address: formData.contact.address,
       gender: formData.gender,
       dob: formData.dob ? formData.dob.format("YYYY-MM-DD") : "",
@@ -139,6 +170,7 @@ export default function PatientPage() {
       medications: formData.medications || [],
       createLogin,
     };
+    console.log("Submitting payload:", payload);
     try {
       const res = await fetch(url, {
         method,
@@ -160,8 +192,10 @@ export default function PatientPage() {
     setEditingPatient(null);
     setShowModal(false);
     setCreateLogin(false);
+    setIsSubmitting(false);
   };
   const handleEdit = (p: IPatient) => {
+    setIsSubmitting(false);
     setEditingPatient(p);
     setFormData({
       ...p,
@@ -176,7 +210,9 @@ export default function PatientPage() {
   const handleDelete = async (id?: string) => {
     if (!id || !window.confirm("Are you sure you want to delete this patient?"))
       return;
-    await fetch(`${import.meta.env.VITE_BACK_URL}/patient/${id}`, { method: "DELETE" });
+    await fetch(`${import.meta.env.VITE_BACK_URL}/patient/${id}`, {
+      method: "DELETE",
+    });
     fetchPatients();
   };
   const filteredPatients = useMemo(() => {
@@ -435,6 +471,8 @@ export default function PatientPage() {
                   required
                   margin="dense"
                   size="small"
+                  error={!!errors.fullName}
+                  helperText={errors.fullName}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -447,16 +485,22 @@ export default function PatientPage() {
                   onChange={handleChange}
                   margin="dense"
                   size="small"
+                  error={!!errors.email}
+                  helperText={errors.email}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  {/* <DatePicker
+                  <DatePicker
                     label="Date of Birth"
                     value={formData.dob}
-                    onChange={(newValue: Dayjs | null) =>
-                      setFormData((prev) => ({ ...prev, dob: newValue }))
+                    onChange={(newValue) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        dob: newValue as Dayjs | null,
+                      }))
                     }
+                    maxDate={dayjs()}
                     slotProps={{
                       textField: {
                         margin: "dense",
@@ -464,25 +508,7 @@ export default function PatientPage() {
                         size: "small",
                       },
                     }}
-                  /> */}
-                  <DatePicker
-  label="Date of Birth"
-  value={formData.dob}
-  onChange={(newValue) =>
-    setFormData((prev) => ({
-      ...prev,
-      dob: (newValue as Dayjs | null),
-    }))
-  }
-  slotProps={{
-    textField: {
-      margin: "dense",
-      fullWidth: true,
-      size: "small",
-    },
-  }}
-/>
-
+                  />
                 </LocalizationProvider>
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
@@ -502,11 +528,17 @@ export default function PatientPage() {
                     value={formData.gender || ""}
                     label="Gender"
                     onChange={handleChange}
+                    error={!!errors.gender}
                   >
                     <MenuItem value="Male">Male</MenuItem>
                     <MenuItem value="Female">Female</MenuItem>
                     <MenuItem value="Other">Other</MenuItem>
                   </Select>
+                  {errors.gender && (
+                    <Typography color="error" fontSize={12}>
+                      {errors.gender}
+                    </Typography>
+                  )}
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
@@ -518,6 +550,7 @@ export default function PatientPage() {
                     value={formData.bloodGroup || ""}
                     label="Blood Group"
                     onChange={handleChange}
+                    error={!!errors.bloodGroup}
                   >
                     {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map(
                       (bg) => (
@@ -527,6 +560,11 @@ export default function PatientPage() {
                       )
                     )}
                   </Select>
+                  {errors.bloodGroup && (
+                    <Typography color="error" fontSize={12}>
+                      {errors.bloodGroup}
+                    </Typography>
+                  )}
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -539,6 +577,8 @@ export default function PatientPage() {
                   required
                   size="small"
                   margin="dense"
+                  error={!!errors["contact.phone"]}
+                  helperText={errors["contact.phone"]}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -550,6 +590,8 @@ export default function PatientPage() {
                   onChange={handleChange}
                   margin="dense"
                   size="small"
+                  error={!!errors["contact.address"]}
+                  helperText={errors["contact.address"]}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
@@ -560,13 +602,10 @@ export default function PatientPage() {
                   size="small"
                   value={formData.allergies?.join(", ") || ""}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      allergies: e.target.value
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    })
+                    setFormData((prev) => ({
+                      ...prev,
+                      allergies: e.target.value.split(",").map((s) => s.trim()),
+                    }))
                   }
                   margin="dense"
                 />
@@ -583,8 +622,7 @@ export default function PatientPage() {
                       ...formData,
                       conditions: e.target.value
                         .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean),
+                        .map((s) => s.trim()),
                     })
                   }
                   margin="dense"
@@ -602,8 +640,7 @@ export default function PatientPage() {
                       ...formData,
                       medications: e.target.value
                         .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean),
+                        .map((s) => s.trim()),
                     })
                   }
                   margin="dense"
@@ -624,23 +661,18 @@ export default function PatientPage() {
               <TypedButton btntype="delete" onClick={resetForm} size="small">
                 Cancel
               </TypedButton>
-              {editingPatient ? (
-                <TypedButton
-                  btntype="secondary"
-                  size="small"
-                  onClick={handleSubmit}
-                >
-                  Update
-                </TypedButton>
-              ) : (
-                <TypedButton
-                  btntype="primary"
-                  size="small"
-                  onClick={handleSubmit}
-                >
-                  Save
-                </TypedButton>
-              )}
+              <TypedButton
+                btntype="primary"
+                size="small"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? "Saving..."
+                  : editingPatient
+                  ? "Update"
+                  : "Save"}
+              </TypedButton>
             </Box>
           </Box>
         </DialogContent>
