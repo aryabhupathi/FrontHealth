@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
@@ -35,7 +36,6 @@ import { useThemeContext } from "../../context/ThemeContext";
 import { getPatientStyles, TypedButton } from "../../themes/theme";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
 interface IPatient {
   _id?: string;
   fullName: string;
@@ -55,6 +55,13 @@ interface IDoctor {
   };
 }
 type AppointmentStatus = "Pending" | "Confirmed" | "Cancelled";
+type FormErrors = {
+  patient?: string;
+  doctor?: string;
+  date?: string;
+  time?: string;
+  appointmentType?: string;
+};
 interface Appointment {
   _id: string;
   patient?: IPatient;
@@ -62,7 +69,7 @@ interface Appointment {
   date: string;
   time: string;
   status: AppointmentStatus;
-  consultationMode: "Online" | "In-person";
+  appointmentType: "Online" | "In-person";
   consultationFee?: number;
 }
 interface AvailableSlot {
@@ -83,19 +90,31 @@ const Appointments: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>("");
-  
+  const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [availability, setAvailability] = useState<AvailableSlot[]>([]);
   const [formData, setFormData] = useState({
     patient: "",
     doctor: "",
     date: "",
     time: "",
-    consultationMode: "Online" as "Online" | "In-person",
+    appointmentType: "Online" as "Online" | "In-person",
     consultationFee: 0,
   });
   const isMobile = useMediaQuery("(max-width: 768px)");
   const { mode } = useThemeContext();
   const styles = getPatientStyles(mode);
+  const validateForm = () => {
+    const newErrors: FormErrors = {};
+    if (!formData.patient) newErrors.patient = "Patient is required";
+    if (!formData.doctor) newErrors.doctor = "Doctor is required";
+    if (!selectedDate) newErrors.date = "Date is required";
+    if (!formData.time) newErrors.time = "Time is required";
+    if (!formData.appointmentType)
+      newErrors.appointmentType = "Consultation mode is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -131,33 +150,18 @@ const Appointments: React.FC = () => {
     availability.find(
       (d) => d.date === dayjs(selectedDate).format("YYYY-MM-DD")
     )?.times || [];
-  // const filteredAppointments = useMemo(() => {
-  //   return appointments.filter((a) => {
-  //     const doctorMatch = !filterDoctor || a.doctor?._id === filterDoctor;
-  //     const patientMatch = !filterPatient || a.patient?._id === filterPatient;
-  //     const dateMatch =
-  //       !filterDate ||
-  //       new Date(a.date).toDateString() === filterDate.toDateString();
-  //     const modeMatch = !filterMode || a.consultationMode === filterMode;
-  //     return doctorMatch && patientMatch && dateMatch && modeMatch;
-  //   });
-  // }, [appointments, filterDoctor, filterPatient, filterDate, filterMode]);
-  
   const filteredAppointments = useMemo(() => {
-  return appointments.filter((a) => {
-    const doctorMatch = !filterDoctor || a.doctor?._id === filterDoctor;
-    const patientMatch = !filterPatient || a.patient?._id === filterPatient;
-
-    const dateMatch =
-      !filterDate ||
-      dayjs(a.date).format("YYYY-MM-DD") === filterDate.format("YYYY-MM-DD");
-
-    const modeMatch = !filterMode || a.consultationMode === filterMode;
-
-    return doctorMatch && patientMatch && dateMatch && modeMatch;
-  });
-}, [appointments, filterDoctor, filterPatient, filterDate, filterMode]);
-const totalFiltered = filteredAppointments.length;
+    return appointments.filter((a) => {
+      const doctorMatch = !filterDoctor || a.doctor?._id === filterDoctor;
+      const patientMatch = !filterPatient || a.patient?._id === filterPatient;
+      const dateMatch =
+        !filterDate ||
+        dayjs(a.date).format("YYYY-MM-DD") === filterDate.format("YYYY-MM-DD");
+      const modeMatch = !filterMode || a.appointmentType === filterMode;
+      return doctorMatch && patientMatch && dateMatch && modeMatch;
+    });
+  }, [appointments, filterDoctor, filterPatient, filterDate, filterMode]);
+  const totalFiltered = filteredAppointments.length;
   const totalPages = Math.ceil(totalFiltered / itemsPerPage);
   const paginatedAppointments = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -185,6 +189,7 @@ const totalFiltered = filteredAppointments.length;
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     const finalPayload = {
       ...formData,
       date: dayjs(selectedDate).format("YYYY-MM-DD"),
@@ -199,12 +204,15 @@ const totalFiltered = filteredAppointments.length;
       if (!res.ok) throw new Error("Failed");
       alert("Appointment booked!");
       setOpenDialog(false);
-      const fresh = await fetch("`${import.meta.env.VITE_BACK_URL}/appointment");
+      const fresh = await fetch(
+        "`${import.meta.env.VITE_BACK_URL}/appointment"
+      );
       setAppointments(await fresh.json());
     } catch (err) {
       console.error(err);
     }
   };
+  console.log(paginatedAppointments, "papapappapaapp");
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={styles.container}>
@@ -246,10 +254,7 @@ const totalFiltered = filteredAppointments.length;
             <DatePicker
               label="Select Date"
               value={filterDate}
-              // onChange={(d) => setFilterDate(d)}
-              
-onChange={(d) => setFilterDate(d as Dayjs | null)}
-
+              onChange={(d) => setFilterDate(d as Dayjs | null)}
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -370,15 +375,7 @@ onChange={(d) => setFilterDate(d as Dayjs | null)}
                           Mode
                         </Typography>
                         <Typography variant="body1">
-                          {a.consultationMode || "—"}
-                        </Typography>
-                      </div>
-                      <div>
-                        <Typography variant="body2" color="text.secondary">
-                          Fee
-                        </Typography>
-                        <Typography variant="body1" fontWeight="bold">
-                          ₹{a.consultationFee}
+                          {a.appointmentType || "—"}
                         </Typography>
                       </div>
                     </Box>
@@ -406,7 +403,6 @@ onChange={(d) => setFilterDate(d as Dayjs | null)}
                   <TableCell>Time</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Mode</TableCell>
-                  <TableCell>Fee</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -432,8 +428,7 @@ onChange={(d) => setFilterDate(d as Dayjs | null)}
                       </TableCell>
                       <TableCell>{a.time}</TableCell>
                       <TableCell>{a.status}</TableCell>
-                      <TableCell>{a.consultationMode}</TableCell>
-                      <TableCell>₹{a.consultationFee}</TableCell>
+                      <TableCell>{a.appointmentType}</TableCell>
                       <TableCell>
                         <IconButton
                           disabled={a.status === "Confirmed"}
@@ -500,6 +495,8 @@ onChange={(d) => setFilterDate(d as Dayjs | null)}
                     {...params}
                     label="Select Patient"
                     margin="dense"
+                    error={!!errors.patient}
+                    helperText={errors.patient}
                   />
                 )}
                 sx={styles.filterField}
@@ -508,24 +505,29 @@ onChange={(d) => setFilterDate(d as Dayjs | null)}
                 options={doctors}
                 getOptionLabel={(d) => d.fullName}
                 onChange={(_, v) => {
-                  const id = v?._id || "";
+                  setSelectedDoctor(v);
                   const fee =
-                    formData.consultationMode === "Online"
+                    formData.appointmentType === "Online"
                       ? v?.consultationFee?.online
                       : v?.consultationFee?.inPerson;
                   setFormData({
                     ...formData,
-                    doctor: id,
+                    doctor: v?._id || "",
                     consultationFee: fee ?? 0,
                   });
-                  if (id) fetchAvailability(id);
+                  if (v?._id) fetchAvailability(v._id);
                   setSelectedDate(null);
                   setSelectedTime("");
                 }}
                 renderInput={(params) => (
-                  <TextField {...params} label="Select Doctor" margin="dense" />
+                  <TextField
+                    {...params}
+                    label="Select Doctor"
+                    margin="dense"
+                    error={!!errors.doctor}
+                    helperText={errors.doctor}
+                  />
                 )}
-                sx={styles.filterField}
               />
               <DatePicker
                 label="Select Date"
@@ -542,6 +544,8 @@ onChange={(d) => setFilterDate(d as Dayjs | null)}
                   textField: {
                     fullWidth: true,
                     size: "small",
+                    error: !!errors.date,
+                    helperText: errors.date,
                   },
                 }}
                 sx={{ minWidth: { sm: 180 } }}
@@ -568,23 +572,38 @@ onChange={(d) => setFilterDate(d as Dayjs | null)}
                   </Grid>
                 </>
               )}
+              {errors.time && (
+                <Typography color="error" variant="caption">
+                  {errors.time}
+                </Typography>
+              )}
               <FormControl fullWidth margin="dense" size="small">
                 <InputLabel>Consultation Mode</InputLabel>
                 <Select
-                  value={formData.consultationMode}
+                  value={formData.appointmentType}
                   label="Consultation Mode"
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const mode = e.target.value as "Online" | "In-person";
+                    const fee = selectedDoctor
+                      ? mode === "Online"
+                        ? selectedDoctor.consultationFee?.online
+                        : selectedDoctor.consultationFee?.inPerson
+                      : 0;
                     setFormData({
                       ...formData,
-                      consultationMode: e.target.value as
-                        | "Online"
-                        | "In-person",
-                    })
-                  }
+                      appointmentType: mode,
+                      consultationFee: fee ?? 0,
+                    });
+                  }}
                 >
                   <MenuItem value="Online">Online</MenuItem>
                   <MenuItem value="In-person">In-person</MenuItem>
                 </Select>
+                {errors.appointmentType && (
+                  <Typography color="error" variant="caption">
+                    {errors.appointmentType}
+                  </Typography>
+                )}
               </FormControl>
               <TextField
                 label="Consultation Fee (₹)"
@@ -592,12 +611,7 @@ onChange={(d) => setFilterDate(d as Dayjs | null)}
                 fullWidth
                 margin="dense"
                 value={formData.consultationFee}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    consultationFee: Number(e.target.value),
-                  })
-                }
+                disabled
               />
               <DialogActions sx={{ mt: 2 }}>
                 <Button color="error" onClick={() => setOpenDialog(false)}>
