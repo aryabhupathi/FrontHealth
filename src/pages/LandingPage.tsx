@@ -96,8 +96,7 @@ const LandingPage: React.FC = () => {
                   variant="caption"
                   sx={{
                     letterSpacing: 0.8,
-                    textTransform: "uppercase",
-                    color: theme.palette.text.default,
+                    textTransform: "uppercase"
                   }}
                 >
                   Smart, patient‑first care

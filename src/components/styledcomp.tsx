@@ -253,6 +253,6 @@ export const WarningTableHead = styled(TableHead)(({ theme }) => ({
       ? "rgba(234,179,8,0.15)"
       : "rgba(254,243,199,0.8)",
 }));
-export const AutoText = styled(TextField)(({ theme }) => ({
+export const AutoText = styled(TextField)(() => ({
   margin: 0,
 }));
