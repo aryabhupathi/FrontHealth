@@ -14,20 +14,18 @@ import {
   TableRow,
   Paper,
   Table,
-  TableHead,
   TableBody,
   Collapse,
   Autocomplete,
   Divider,
   useMediaQuery,
+  CardActions,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import useDebounce from "../../components/Debounce";
-import { getPatientStyles, TypedButton } from "../../themes/theme";
-import { useThemeContext } from "../../context/ThemeContext";
 interface IWorkingHour {
   day: string;
   startTime: string;
@@ -63,6 +61,23 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import { FormAdminSchema } from "../../schemas/patient.schema";
 import { ZodError } from "zod";
+import {
+  AddButton,
+  AutoText,
+  CardContentBox,
+  CardHeaderBox,
+  CardTitle,
+  DeleteButton,
+  FilterAutocomplete,
+  FilterWrapper,
+  PageTitle,
+  PaginationBox,
+  PatientCard,
+  PatientContainer,
+  PatientTableHead,
+  SaveButton,
+  UpdateButton,
+} from "../../components/styledcomp";
 const weekDays = [
   "Monday",
   "Tuesday",
@@ -77,7 +92,7 @@ const DoctorPage: React.FC = () => {
   const [filteredDoctors, setFilteredDoctors] = useState<IDoctor[]>([]);
   const [search] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 900px)");
   const [filter, setFilter] = useState({
     doctorName: "",
     department: "",
@@ -107,8 +122,6 @@ const DoctorPage: React.FC = () => {
     accountStatus: "pending",
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const { mode } = useThemeContext();
-  const styles = getPatientStyles(mode);
   const itemsPerPage = 10;
   const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
   const paginatedDoctors = filteredDoctors.slice(
@@ -287,10 +300,8 @@ const DoctorPage: React.FC = () => {
     }
   };
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h5" sx={styles.title}>
-        Doctor
-      </Typography>
+    <PatientContainer>
+      <PageTitle variant="h5">Doctor</PageTitle>
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center" gap={1}>
           <Typography variant="h6">Filters</Typography>
@@ -298,60 +309,51 @@ const DoctorPage: React.FC = () => {
             {filterOpen ? <ExpandLess /> : <ExpandMore />}
           </IconButton>
         </Box>
-        <TypedButton
-          btntype="primary"
-          onClick={() => handleShowModal()}
-          size="small"
-        >
+        <AddButton onClick={() => handleShowModal()} size="small">
           + Add Doctor
-        </TypedButton>
+        </AddButton>
       </Box>
       <Collapse in={filterOpen} sx={{ py: 1 }}>
-        <Box sx={styles.filterBox}>
-          <Autocomplete
+        <FilterWrapper>
+          <FilterAutocomplete
             options={[...new Set(doctors.map((d) => d.fullName))]}
             value={filter.doctorName || ""}
             onChange={(_, value) =>
               setFilter((f) => ({ ...f, doctorName: value || "" }))
             }
             renderInput={(params) => (
-              <TextField {...params} label="Doctor Name" size="small" />
+              <AutoText {...params} label="Doctor Name" size="small" />
             )}
-            fullWidth
-            sx={styles.filterField}
           />
-          <Autocomplete
+          <FilterAutocomplete
             options={[...new Set(doctors.map((d) => d.department))]}
             value={filter.department || ""}
             onChange={(_, value) =>
               setFilter((f) => ({ ...f, department: value || "" }))
             }
             renderInput={(params) => (
-              <TextField {...params} label="Department" size="small" />
+              <AutoText {...params} label="Department" size="small" />
             )}
-            sx={styles.filterField}
           />
-          <Autocomplete
+          <FilterAutocomplete
             options={[...new Set(doctors.flatMap((d) => d.specialization))]}
             value={filter.specialization || ""}
             onChange={(_, value) =>
               setFilter((f) => ({ ...f, specialization: value || "" }))
             }
             renderInput={(params) => (
-              <TextField {...params} label="Specialization" size="small" />
+              <AutoText {...params} label="Specialization" size="small" />
             )}
-            sx={styles.filterField}
           />
-          <TypedButton
-            btntype="delete"
+          <DeleteButton
             size="small"
             onClick={() =>
               setFilter({ department: "", specialization: "", doctorName: "" })
             }
           >
             Clear
-          </TypedButton>
-        </Box>
+          </DeleteButton>
+        </FilterWrapper>
       </Collapse>
       <Divider sx={{ mb: 2 }} />
       <Typography variant="subtitle1" mb={1}>
@@ -365,40 +367,25 @@ const DoctorPage: React.FC = () => {
             </Paper>
           ) : (
             paginatedDoctors.map((d, i) => (
-              <Paper key={d._id} sx={styles.patientCard}>
-                <Box sx={styles.cardHeader}>
-                  <Typography
-                    variant="subtitle2"
-                    noWrap
-                    sx={{
-                      flex: 1,
-                      textAlign: "left",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontWeight: "medium",
-                    }}
-                  >
+              <PatientCard key={d._id || i}>
+                <CardHeaderBox>
+                  <CardTitle variant="subtitle2">
                     {(currentPage - 1) * itemsPerPage + i + 1}. {d.fullName}
-                  </Typography>
-                  <Box sx={styles.cardActions}>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleShowModal(d)}
-                    >
+                  </CardTitle>
+                  <CardActions>
+                    <Button size="small" onClick={() => handleShowModal(d)}>
                       <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      color="error"
+                    </Button>
+                    <Button
                       size="small"
+                      color="error"
                       onClick={() => handleDelete(d._id)}
                     >
                       <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </Box>
-                <Box sx={styles.cardContent}>
+                    </Button>
+                  </CardActions>
+                </CardHeaderBox>
+                <CardContentBox>
                   <div>
                     <Typography variant="body2" color="text.secondary">
                       Department
@@ -431,20 +418,28 @@ const DoctorPage: React.FC = () => {
                       {d.contact?.phone || "—"}
                     </Typography>
                   </div>
-                </Box>
-              </Paper>
+                </CardContentBox>
+              </PatientCard>
             ))
           )}
         </Box>
       ) : (
-        <Paper>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            overflow: "auto",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
           <Table>
-            <TableHead sx={styles.tableHead}>
+            <PatientTableHead>
               <TableRow
                 sx={{
-                  "& .MuiTableCell-root": {
-                    py: 0.3,
-                    height: 24,
+                  backgroundColor: "action.hover",
+                  "& th": {
+                    fontWeight: 600,
                   },
                 }}
               >
@@ -456,7 +451,7 @@ const DoctorPage: React.FC = () => {
                 <TableCell>Contact</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
-            </TableHead>
+            </PatientTableHead>
             <TableBody>
               {paginatedDoctors.length === 0 ? (
                 <TableRow>
@@ -470,7 +465,7 @@ const DoctorPage: React.FC = () => {
                     key={d._id}
                     sx={{
                       "& .MuiTableCell-root": {
-                        py: 1,
+                        py: 0.3,
                         height: 24,
                       },
                     }}
@@ -484,18 +479,26 @@ const DoctorPage: React.FC = () => {
                     <TableCell>{d.experience || "-"} yrs</TableCell>
                     <TableCell>{d.contact?.phone}</TableCell>
                     <TableCell>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleShowModal(d)}
+                      <Box
+                        sx={{ display: "flex", justifyContent: "space-around" }}
                       >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDelete(d._id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                        <Button
+                          sx={{ minWidth: 0 }}
+                          color="primary"
+                          size="small"
+                          onClick={() => handleShowModal(d)}
+                        >
+                          <EditIcon />
+                        </Button>
+                        <Button
+                          sx={{ minWidth: 0 }}
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(d._id)}
+                        >
+                          <DeleteIcon />
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))
@@ -504,7 +507,7 @@ const DoctorPage: React.FC = () => {
           </Table>
         </Paper>
       )}
-      <Box sx={styles.paginationBox}>
+      <PaginationBox>
         <Typography variant="body2">
           Showing {(currentPage - 1) * itemsPerPage + 1}–
           {Math.min(currentPage * itemsPerPage, filteredDoctors.length)} of{" "}
@@ -526,7 +529,7 @@ const DoctorPage: React.FC = () => {
             Next
           </Button>
         </Box>
-      </Box>
+      </PaginationBox>
       <Dialog
         open={showModal}
         onClose={() => setShowModal(false)}
@@ -716,46 +719,35 @@ const DoctorPage: React.FC = () => {
                     />
                   </Grid>
                   <Grid size={{ xs: 12, md: 2 }}>
-                    <TypedButton
-                      btntype="delete"
+                    <DeleteButton
                       size="small"
                       onClick={() => removeWorkingHour(i)}
                     >
                       X
-                    </TypedButton>
+                    </DeleteButton>
                   </Grid>
                 </Grid>
               ))}
             </LocalizationProvider>
-            <TypedButton btntype="primary" onClick={addWorkingHour}>
-              + Add Slot
-            </TypedButton>
+            <AddButton onClick={addWorkingHour}>+ Add Slot</AddButton>
           </Box>
         </DialogContent>
         <DialogActions>
-          <TypedButton
-            btntype="delete"
-            onClick={() => setShowModal(false)}
-            color="error"
-          >
+          <DeleteButton onClick={() => setShowModal(false)} color="error">
             Cancel
-          </TypedButton>
+          </DeleteButton>
           {editingDoctor ? (
-            <TypedButton
-              btntype="secondary"
-              size="small"
-              onClick={handleSubmit}
-            >
+            <UpdateButton size="small" onClick={handleSubmit}>
               Update
-            </TypedButton>
+            </UpdateButton>
           ) : (
-            <TypedButton btntype="primary" size="small" onClick={handleSubmit}>
+            <SaveButton size="small" onClick={handleSubmit}>
               Save
-            </TypedButton>
+            </SaveButton>
           )}
         </DialogActions>
       </Dialog>
-    </Box>
+    </PatientContainer>
   );
 };
 export default DoctorPage;

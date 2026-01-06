@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
-  Button,
   Typography,
   IconButton,
   Collapse,
@@ -13,15 +12,24 @@ import {
   TableCell,
   Divider,
   Modal,
-  TextField,
-  Autocomplete,
   useMediaQuery,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { getPatientStyles, TypedButton } from "../../themes/theme";
 import useDebounce from "../../components/Debounce";
-import { useThemeContext } from "../../context/ThemeContext";
+import {
+  AutoText,
+  DefaultButton,
+  DeleteButton,
+  FilterAutocomplete,
+  FilterWrapper,
+  PageTitle,
+  PaginationBox,
+  PatientCard,
+  PatientContainer,
+  PatientTableHead,
+  UpdateButton,
+} from "../../components/styledcomp";
 interface Medicine {
   name: string;
   dosage: string;
@@ -62,8 +70,6 @@ const Prescriptions: React.FC = () => {
   const debouncedMedicineSearch = useDebounce(medicineSearch, 300);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const { mode } = useThemeContext();
-  const styles = getPatientStyles(mode);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -129,10 +135,8 @@ const Prescriptions: React.FC = () => {
     setMedicineSearch("");
   };
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h5" sx={styles.title}>
-        Prescription
-      </Typography>
+    <PatientContainer>
+      <PageTitle variant="h5">Prescription</PageTitle>
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center" gap={1}>
           <Typography variant="h6">Filters</Typography>
@@ -142,45 +146,42 @@ const Prescriptions: React.FC = () => {
         </Box>
       </Box>
       <Collapse in={filterOpen} sx={{ py: 1 }}>
-        <Box sx={styles.filterBox}>
-          <Autocomplete
-            options={doctors}
-            getOptionLabel={(d) => d.fullName || ""}
-            value={doctors.find((d) => d.fullName === doctorSearch) || null}
-            onChange={(_, val) => setDoctorSearch(val?.fullName || "")}
+        <FilterWrapper>
+          <FilterAutocomplete
+            options={[...new Set(doctors.map((d) => d.fullName))]}
+            value={doctorSearch || null}
+            onChange={(_, val) => setDoctorSearch(val || "")}
             renderInput={(params) => (
-              <TextField {...params} label="Doctor" size="small" />
+              <AutoText {...params} label="Doctor" size="small" />
             )}
-            sx={styles.filterField}
           />
-          <Autocomplete
-            options={patients}
-            getOptionLabel={(p) => p.fullName || ""}
-            value={patients.find((p) => p.fullName === patientSearch) || null}
-            onChange={(_, val) => setPatientSearch(val?.fullName || "")}
+          <FilterAutocomplete
+            options={[...new Set(patients.map((p) => p.fullName))]}
+            value={patientSearch || null}
+            onChange={(_, val) => setPatientSearch(val || "")}
             renderInput={(params) => (
-              <TextField {...params} label="Patient" size="small" />
+              <AutoText {...params} label="Patient" size="small" />
             )}
-            sx={styles.filterField}
           />
-          <Autocomplete
+          <FilterAutocomplete
             options={allMedicineNames}
             getOptionLabel={(option) => option}
             value={medicineSearch || null}
             onChange={(_, val) => setMedicineSearch(val || "")}
             renderInput={(params) => (
-              <TextField {...params} label="Medicine" size="small" />
+              <AutoText {...params} label="Medicine" size="small" />
             )}
-            sx={styles.filterField}
           />
-          <TypedButton
-            btntype="delete"
+          <DeleteButton
             onClick={handleClear}
-            sx={{ height: 40, px: 3 }}
+            sx={{
+              mt: { xs: 0.5, md: 0 },
+              width: { xs: "100%", md: "auto" },
+            }}
           >
             CLEAR
-          </TypedButton>
-        </Box>
+          </DeleteButton>
+        </FilterWrapper>
       </Collapse>
       <Divider sx={{ marginBottom: 2 }} />
       <Typography variant="subtitle1" mb={1}>
@@ -189,7 +190,7 @@ const Prescriptions: React.FC = () => {
       {isMobile ? (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 1 }}>
           {paginatedPrescriptions.map((pres, i) => (
-            <Paper key={pres._id} sx={styles.patientCard}>
+            <PatientCard key={pres._id} sx={{ p: 2 }}>
               <Typography
                 variant="subtitle2"
                 color="text.secondary"
@@ -218,21 +219,25 @@ const Prescriptions: React.FC = () => {
                 <Typography variant="body1">{pres.diagnosis || "—"}</Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <TypedButton
-                  btntype="primary"
-                  onClick={() => setSelected(pres)}
-                  size="small"
-                >
+                <UpdateButton onClick={() => setSelected(pres)} size="small">
                   View
-                </TypedButton>
+                </UpdateButton>
               </Box>
-            </Paper>
+            </PatientCard>
           ))}
         </Box>
       ) : (
-        <Paper>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            overflow: "auto",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
           <Table>
-            <TableHead sx={styles.tableHead}>
+            <PatientTableHead>
               <TableRow
                 sx={{
                   "& .MuiTableCell-root": {
@@ -247,7 +252,7 @@ const Prescriptions: React.FC = () => {
                 <TableCell>Diagnosis</TableCell>
                 <TableCell>View</TableCell>
               </TableRow>
-            </TableHead>
+            </PatientTableHead>
             <TableBody>
               {paginatedPrescriptions.map((pres, i) => (
                 <TableRow
@@ -266,13 +271,13 @@ const Prescriptions: React.FC = () => {
                   <TableCell>{pres.doctor.fullName}</TableCell>
                   <TableCell>{pres.diagnosis || "—"}</TableCell>
                   <TableCell>
-                    <Button
+                    <UpdateButton
                       size="small"
                       variant="outlined"
                       onClick={() => setSelected(pres)}
                     >
                       View
-                    </Button>
+                    </UpdateButton>
                   </TableCell>
                 </TableRow>
               ))}
@@ -280,36 +285,29 @@ const Prescriptions: React.FC = () => {
           </Table>
         </Paper>
       )}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mt={2}
-        flexWrap="wrap"
-        gap={2}
-      >
+      <PaginationBox>
         <Typography variant="body2" color="text.secondary">
           Showing {startIndex + 1}–
           {Math.min(startIndex + itemsPerPage, totalFiltered)} of{" "}
           {totalFiltered}
         </Typography>
         <Box>
-          <Button
+          <DefaultButton
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
             size="small"
           >
-            Prev
-          </Button>
-          <Button
+            <Typography variant="body2">Prev</Typography>
+          </DefaultButton>
+          <DefaultButton
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
             size="small"
           >
-            Next
-          </Button>
+            <Typography variant="body2">Next</Typography>
+          </DefaultButton>
         </Box>
-      </Box>
+      </PaginationBox>
       <Modal open={!!selected} onClose={() => setSelected(null)}>
         <Box
           sx={{
@@ -370,7 +368,7 @@ const Prescriptions: React.FC = () => {
               </Typography>
               <Box sx={{ overflowX: "auto", mb: 2 }}>
                 <Table size="small" sx={{ minWidth: 500 }}>
-                  <TableHead sx={styles.tableHead}>
+                  <TableHead>
                     <TableRow
                       sx={{
                         "& .MuiTableCell-root": {
@@ -428,19 +426,18 @@ const Prescriptions: React.FC = () => {
                 </Table>
               </Box>
               <Box textAlign="right">
-                <TypedButton
-                  btntype="delete"
+                <DeleteButton
                   onClick={() => setSelected(null)}
                   sx={{ minWidth: { xs: "100%", sm: "auto" } }}
                 >
                   Close
-                </TypedButton>
+                </DeleteButton>
               </Box>
             </>
           )}
         </Box>
       </Modal>
-    </Box>
+    </PatientContainer>
   );
 };
 export default Prescriptions;

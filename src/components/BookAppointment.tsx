@@ -9,7 +9,7 @@ import {
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { TypedButton } from "../themes/theme";
+import { AddButton, DeleteButton } from "./styledcomp";
 interface WorkingHour {
   day: string;
   startTime: string;
@@ -72,6 +72,7 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
     }
     return dates;
   }, [selectedDoctorData]);
+  console.log(availableDates, "aaaaaaaaaaaaaaa")
   const availableTimeSlots = useMemo(() => {
     if (!date || !selectedDoctorData?.workingHours) return [];
     const dayName = getDayName(date);
@@ -81,6 +82,7 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
     if (!schedule) return [];
     return generateTimeSlots(schedule.startTime, schedule.endTime);
   }, [date, selectedDoctorData]);
+  
   useEffect(() => {
     fetch(`${import.meta.env.VITE_BACK_URL}/doctor`)
       .then((res) => res.json())
@@ -142,7 +144,7 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
         </Grid>
 
         <Grid size={{ xs:12, sm:6}}>
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
+          {/* <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
               label="Select Date"
               value={date}
@@ -163,7 +165,43 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
                       },
                     }}
             />
-          </LocalizationProvider>
+          </LocalizationProvider> */}
+
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+  <DatePicker
+    label="Select Date"
+    value={date}
+    disabled={!selectedDoctor}
+    onChange={(value) => {
+      if (!value) {
+        setDate(null);
+      } else {
+        setDate(value instanceof Date ? value : value.toDate());
+      }
+      setTime("");
+    }}
+    shouldDisableDate={(value) => {
+      if (!value) return true;
+
+      const d =
+        value instanceof Date ? value : value.toDate();
+
+      return !availableDates.some(
+        (allowed) =>
+          allowed.getFullYear() === d.getFullYear() &&
+          allowed.getMonth() === d.getMonth() &&
+          allowed.getDate() === d.getDate()
+      );
+    }}
+    slotProps={{
+      textField: {
+        fullWidth: true,
+        size: "small",
+      },
+    }}
+  />
+</LocalizationProvider>
+
         </Grid>
 
         <Grid size={{ xs:12, sm:6}}>
@@ -202,15 +240,15 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
 
         <Grid size={{ xs:12}}>
           <Box display="flex" justifyContent="flex-end" gap={2}>
-            <TypedButton btntype="delete" onClick={onCancel}>
+            <DeleteButton onClick={onCancel}>
               Cancel
-            </TypedButton>
-           <TypedButton btntype="primary"
+            </DeleteButton>
+           <AddButton
               type="submit"
               disabled={!selectedDoctor || !date || !time}
             >
               Book Appointment
-            </TypedButton>
+            </AddButton>
           </Box>
         </Grid>
 

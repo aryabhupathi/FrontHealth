@@ -1,212 +1,273 @@
-import { Button, styled, type SxProps } from "@mui/material";
-type ThemeMode = "light" | "dark";
-type ButtonType = "primary" | "secondary" | "delete";
-export const getPatientStyles = (mode: "light" | "dark") => ({
-  container: {
-    backgroundColor: mode === "light" ? "#ecf1f9ff" : "#1e1e1eff",
-    p: 3,
-    borderRadius: 2,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-  },
-  title: {
-    textAlign: "center" as const,
-    mb: 3,
-    color: "primary.main",
-    fontWeight: "bold",
-  },
-  tableHead: {
-    backgroundColor: mode === "light" ? "#f1f3f4" : "#2d2d2d",
-    "& th": {
-      fontWeight: 600,
+import { createTheme, type PaletteMode } from "@mui/material/styles";
+declare module "@mui/material/styles" {
+  interface Palette {
+    gradient: {
+      primary: string;
+      primaryHover: string;
+      accent: string;
+      accentHover: string;
+    };
+    glass: {
+      soft: string;
+      cardBorder: string;
+      cardShadow: string;
+    };
+    layout: {
+      authBg: string;
+    };
+  }
+  interface PaletteOptions {
+    gradient?: {
+      primary?: string;
+      primaryHover?: string;
+      accent?: string;
+      accentHover?: string;
+    };
+    glass?: {
+      soft?: string;
+      cardBorder?: string;
+      cardShadow?: string;
+    };
+    layout?: {
+      authBg?: string;
+    };
+  }
+}
+const getDesignTokens = (mode: PaletteMode) =>
+  mode === "light"
+    ? {
+        palette: {
+          mode: "light" as const,
+          primary: { main: "#2563eb" },
+          secondary: { main: "#16a34a" },
+          background: {
+            default: "#f1f5f9",
+            paper: "#ffffff",
+          },
+          text: {
+            primary: "#020617",
+            secondary: "#475569",
+            default: "#ffffff",
+          },
+          gradient: {
+            primary: "linear-gradient(135deg, #2563eb, #4f46e5, #0ea5e9)",
+            primaryHover: "linear-gradient(135deg, #1d4ed8, #4338ca, #0284c7)",
+            accent: "linear-gradient(135deg, #22c55e, #0ea5e9, #6366f1)",
+            accentHover: "linear-gradient(135deg, #16a34a, #0284c7, #4f46e5)",
+          },
+          glass: {
+            soft: "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(248,250,252,0.96))",
+            cardBorder: "rgba(148,163,184,0.55)",
+            cardShadow:
+              "0 22px 45px rgba(15,23,42,0.12), 0 0 0 1px rgba(226,232,240,0.9)",
+          },
+          layout: {
+            authBg:
+              "radial-gradient(circle at top left, #eff6ff 0, #e0f2fe 35%, #f8fafc 80%)",
+          },
+        },
+      }
+    : {
+        palette: {
+          mode: "dark" as const,
+          primary: { main: "#4f46e5" },
+          secondary: { main: "#22c55e" },
+          background: {
+            default: "#020617",
+            paper: "#020617",
+          },
+          text: {
+            primary: "#e5e7eb",
+            secondary: "rgba(148,163,184,0.95)",
+          },
+          gradient: {
+            primary: "linear-gradient(135deg, #4f46e5, #2563eb, #06b6d4)",
+            primaryHover: "linear-gradient(135deg, #4338ca, #1d4ed8, #0891b2)",
+            accent: "linear-gradient(135deg, #22c55e, #22d3ee, #6366f1)",
+            accentHover: "linear-gradient(135deg, #16a34a, #06b6d4, #4f46e5)",
+          },
+          glass: {
+            soft: "linear-gradient(135deg, rgba(15,23,42,0.88), rgba(15,23,42,0.96))",
+            cardBorder: "rgba(148,163,184,0.45)",
+            cardShadow:
+              "0 24px 60px rgba(15,23,42,0.85), 0 0 0 1px rgba(15,23,42,0.9)",
+          },
+          layout: {
+            authBg:
+              "radial-gradient(circle at top left, #1e88e5 0, #0d47a1 30%, #020617 80%)",
+          },
+        },
+      };
+const getTheme = (mode: PaletteMode) =>
+  createTheme({
+    ...getDesignTokens(mode),
+    shape: {
+      borderRadius: 16,
     },
-  },
-  paginationBox: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    mt: 2,
-  },
-  modalActions: {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: 2,
-    mt: 3,
-  },
-  filterBox: {
-    display: "flex",
-    flexDirection: { xs: "column", sm: "row" },
-    alignItems: { xs: "stretch", sm: "center" },
-    gap: 2,
-    p: 2,
-    borderRadius: 2,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-    backgroundColor: mode === "light" ? "#f1f3f4" : "#2d2d2d",
-  },
-  modalBox: {
-    position: "absolute" as const,
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: 700,
-    bgcolor: "background.paper",
-    borderRadius: 2,
-    boxShadow: 24,
-    p: 3,
-  },
-  filterField: { minWidth: 180, flex: 1 },
-  patientCard: {
-    p: 2,
-    mb: 1.5,
-    borderRadius: 2,
-    boxShadow: 1,
-    "&:last-child": { mb: 0 },
-  },
-  cardContent: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 0.5,
-    "& > div": {
-      display: "flex",
-      justifyContent: "space-between",
-      fontSize: "0.875rem",
+    typography: {
+      fontFamily:
+        "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+      h4: { fontWeight: 700, letterSpacing: 0.4 },
+      button: { textTransform: "none", fontWeight: 600, letterSpacing: 0.4 },
     },
-  },
-  cardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    px: 1.5,
-    py: 1,
-    mb: 1,
-    borderRadius: 1,
-    bgcolor: "action.hover",
-    boxShadow: "0px 1px 2px rgba(0,0,0,0.05)",
-    border: "1px solid",
-    borderColor: "divider",
-  },
-  cardActions: {
-    display: "flex",
-    gap: 0.5,
-    flexShrink: 0,
-  },
-});
-const colorMap: Record<ButtonType, Record<ThemeMode, string>> = {
-  primary: {
-    light: "#2e7d32",
-    dark: "#2e7d32",
-  },
-  secondary: {
-    light: "#be57f2",
-    dark: "#be57f2",
-  },
-  delete: {
-    light: "#d12929",
-    dark: "#eb2020",
-  },
-};
-export const TypedButton = styled(Button, {
-  shouldForwardProp: (prop) => prop !== "btntype",
-})<{ btntype?: ButtonType }>(({ theme, btntype = "primary" }) => {
-  const mode = theme.palette.mode as ThemeMode;
-  const color = colorMap[btntype][mode];
-  return {
-    borderRadius: "8px",
-    textTransform: "none",
-    paddingLeft: "5px",
-    paddingRight: "5px",
-    fontWeight: 600,
-    transition: "0.25s ease",
-    border: `1px solid ${color}`,
-    background: "transparent",
-    color,
-    "&:hover": {
-      background: color,
-      color: "#fff",
-      borderColor: color,
-      transform: "translateY(-2px)",
-      boxShadow: theme.shadows[4],
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: (themeParam) => ({
+          body: {
+            backgroundColor: themeParam.palette.background.default,
+            backgroundImage: themeParam.palette.layout.authBg,
+            backgroundRepeat: "no-repeat",
+            backgroundAttachment: "fixed",
+          },
+        }),
+      },
+      MuiTextField: {
+        defaultProps: {
+          variant: "outlined",
+          margin: "normal",
+        },
+        styleOverrides: {
+          root: ({ theme }) => ({
+            "& .MuiInputLabel-root": {
+              color: theme.palette.text.secondary,
+            },
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 16,
+              color: theme.palette.text.primary,
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(15,23,42,0.9)"
+                  : "rgba(255,255,255,0.9)",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "rgba(148,163,184,0.45)",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "rgba(129,140,248,0.9)",
+              },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "rgba(129,140,248,1)",
+                boxShadow: "0 0 0 1px rgba(129,140,248,0.6)",
+              },
+            },
+            "& .MuiFormHelperText-root.Mui-error": {
+              marginTop: 4,
+              color: "rgba(252,165,165,0.9)",
+            },
+          }),
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            borderRadius: 24,
+            background: theme.palette.glass.soft,
+            border: `1px solid ${theme.palette.glass.cardBorder}`,
+            boxShadow: theme.palette.glass.cardShadow,
+            backdropFilter: "blur(26px)",
+            color: theme.palette.text.primary,
+          }),
+        },
+      },
+      MuiAppBar: {
+        defaultProps: {
+          position: "sticky",
+          color: "transparent",
+          elevation: 0,
+        },
+        styleOverrides: {
+          root: ({ theme }) => ({
+            backdropFilter: "blur(18px)",
+            background:
+              theme.palette.mode === "dark"
+                ? "linear-gradient(135deg, rgba(15,23,42,0.94), rgba(15,23,42,0.98))"
+                : "linear-gradient(135deg, rgba(248,250,252,0.96), rgba(241,245,249,0.98))",
+            borderBottom:
+              theme.palette.mode === "dark"
+                ? "1px solid rgba(148,163,184,0.28)"
+                : "1px solid rgba(148,163,184,0.35)",
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 14px 40px rgba(15,23,42,0.7), 0 0 0 1px rgba(15,23,42,0.8)"
+                : "0 12px 35px rgba(15,23,42,0.12), 0 0 0 1px rgba(226,232,240,0.9)",
+          }),
+        },
+      },
+      MuiToolbar: {
+        styleOverrides: {
+          root: {
+            minHeight: 64,
+            paddingInline: 24,
+            display: "flex",
+            justifyContent: "space-between",
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: ({ theme }) => ({
+            background: theme.palette.glass.soft,
+            borderLeft: `1px solid ${theme.palette.glass.cardBorder}`,
+            boxShadow: theme.palette.glass.cardShadow,
+            backdropFilter: "blur(22px)",
+          }),
+        },
+      },
+      MuiListItemButton: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            borderRadius: 999,
+            marginBlock: 4,
+            paddingInline: 14,
+            "&.Mui-selected": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(129,140,248,0.18)"
+                  : "rgba(191,219,254,0.6)",
+              color:
+                theme.palette.mode === "dark"
+                  ? theme.palette.primary.light
+                  : theme.palette.primary.main,
+            },
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(148,163,184,0.12)"
+                  : "rgba(226,232,240,0.8)",
+            },
+          }),
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            borderRadius: 999,
+            padding: 7,
+            color: theme.palette.text.secondary,
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(148,163,184,0.16)"
+                  : "rgba(148,163,184,0.12)",
+              color: theme.palette.text.primary,
+            },
+          }),
+        },
+      },
+      MuiButton: {
+        variants: [
+          {
+            props: { variant: "text", color: "inherit" },
+            style: {
+              fontWeight: 600,
+              borderRadius: 999,
+              paddingInline: 16,
+              "&:hover": {
+                backgroundColor: "rgba(148,163,184,0.12)",
+              },
+            },
+          },
+        ],
+      },
     },
-    "&:active": {
-      transform: "scale(1)",
-    },
-  };
-});
-export const sidebarDrawer = (
-  open: boolean,
-  drawerWidth: number,
-  collapsedWidth: number
-): SxProps => ({
-  width: open ? drawerWidth : collapsedWidth,
-  flexShrink: 0,
-  "& .MuiDrawer-paper": {
-    width: open ? drawerWidth : collapsedWidth,
-    boxSizing: "border-box",
-    transition: "width 0.3s ease",
-  },
-});
-export const sidebarHeader = (open: boolean): SxProps => ({
-  borderBottom: 1,
-  borderColor: "divider",
-  px: 2,
-  py: 1.5,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: open ? "space-between" : "center",
-});
-export const sidebarMobileToggleBtn: SxProps = {
-  position: "fixed",
-  top: 16,
-  left: 16,
-  zIndex: 1400,
-  bgcolor: "background.paper",
-};
-export const listItemButton = (open: boolean): SxProps => ({
-  justifyContent: open ? "initial" : "center",
-  px: open ? 2 : 1,
-  "&.active": {
-    bgcolor: "primary.main",
-    color: "#fff",
-    "& .MuiListItemIcon-root": { color: "#fff" },
-  },
-});
-export const listItemIcon = (open: boolean): SxProps => ({
-  minWidth: 0,
-  mr: open ? 2 : 0,
-  justifyContent: "center",
-  color: "inherit",
-});
-export const logoutButton = (open: boolean): SxProps => ({
-  justifyContent: "center",
-  minWidth: 0,
-  borderRadius: "12px",
-  transition: "all 0.3s ease",
-  width: open ? "100%" : "auto",
-  color: "red",
-  border: "1px solid red",
-});
-export const overlayBg: SxProps = {
-  position: "fixed",
-  inset: 0,
-  bgcolor: "rgba(0,0,0,0.4)",
-  zIndex: 1200,
-};
-export const cardHover = {
-  position: "relative",
-  transition: "all 0.3s ease",
-  cursor: "pointer",
-  "&:hover": {
-    transform: "translateY(-6px) scale(1.02)",
-    boxShadow: "0 12px 25px rgba(0,0,0,0.18)",
-  },
-};
-export const subtleGlow = {
-  "&:hover::after": {
-    content: '""',
-    position: "absolute",
-    inset: 0,
-    borderRadius: "inherit",
-    background: "rgba(255,255,255,0.15)",
-    animation: "pulse 1.3s infinite",
-  },
-};
+  });
+export { getTheme };

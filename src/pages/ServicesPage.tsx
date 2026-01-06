@@ -24,75 +24,99 @@ import {
 import MainLayout from "../layout/MainLayout";
 const ServicesPage: React.FC = () => {
   const theme = useTheme();
+  const iconColor =
+    theme.palette.mode === "dark"
+      ? theme.palette.primary.main
+      : theme.palette.primary.dark;
   const services = [
     {
-      icon: <FaStethoscope size={40} color={theme.palette.primary.main} />,
-      title: "General Medicine",
+      icon: FaStethoscope,
+      title: "General medicine",
       desc: "Comprehensive primary care for all ages—diagnosis, treatment, and ongoing health management.",
     },
     {
-      icon: <FaHeartbeat size={40} color={theme.palette.primary.main} />,
+      icon: FaHeartbeat,
       title: "Cardiology",
       desc: "Advanced heart health services including ECG, stress tests, and preventive cardiology.",
     },
     {
-      icon: <FaBrain size={40} color={theme.palette.primary.main} />,
+      icon: FaBrain,
       title: "Neurology",
-      desc: "Expert care for conditions like migraines, epilepsy, stroke recovery, and nerve disorders.",
+      desc: "Expert care for migraines, epilepsy, stroke recovery, and nerve disorders.",
     },
     {
-      icon: <FaTooth size={40} color={theme.palette.primary.main} />,
-      title: "Dental Care",
+      icon: FaTooth,
+      title: "Dental care",
       desc: "From routine cleanings to restorative procedures—gentle, modern dental services.",
     },
     {
-      icon: <FaBaby size={40} color={theme.palette.primary.main} />,
+      icon: FaBaby,
       title: "Pediatrics",
-      desc: "Child-friendly care for infants, toddlers, and teens—vaccinations, growth monitoring, and more.",
+      desc: "Child‑friendly care for infants, toddlers, and teens—vaccinations, growth monitoring, and more.",
     },
     {
-      icon: <FaUserMd size={40} color={theme.palette.primary.main} />,
-      title: "Women’s Health",
+      icon: FaUserMd,
+      title: "Women’s health",
       desc: "Gynecology, prenatal care, menopause support, and breast health screenings.",
     },
     {
-      icon: <FaVideo size={40} color={theme.palette.primary.main} />,
-      title: "Telehealth Consultations",
+      icon: FaVideo,
+      title: "Telehealth consultations",
       desc: "24/7 virtual visits with licensed doctors—no travel, no waiting rooms.",
     },
     {
-      icon: <FaShieldAlt size={40} color={theme.palette.primary.main} />,
-      title: "Vaccinations & Immunizations",
-      desc: "CDC-recommended vaccines for children and adults, including flu, HPV, and travel shots.",
+      icon: FaShieldAlt,
+      title: "Vaccinations and immunizations",
+      desc: "Recommended vaccines for children and adults, including flu, HPV, and travel shots.",
     },
     {
-      icon: <FaRunning size={40} color={theme.palette.primary.main} />,
-      title: "Preventive Health",
-      desc: "Annual check-ups, cancer screenings, cholesterol tests, and lifestyle counseling.",
+      icon: FaRunning,
+      title: "Preventive health",
+      desc: "Check‑ups, cancer screenings, cholesterol tests, and lifestyle counseling.",
     },
     {
-      icon: <FaHeadSideVirus size={40} color={theme.palette.primary.main} />,
-      title: "Mental Wellness",
+      icon: FaHeadSideVirus,
+      title: "Mental wellness",
       desc: "Confidential therapy and psychiatric support for anxiety, depression, and stress.",
     },
   ];
   return (
     <MainLayout>
       <Box
-        sx={{
-          py: 8,
+        sx={(t) => ({
+          py: { xs: 8, md: 10 },
           textAlign: "center",
-          background:
-            theme.palette.mode === "light"
-              ? "#f5f7fb"
-              : theme.palette.background.default,
-        }}
+          position: "relative",
+          overflow: "hidden",
+          backgroundImage: t.palette.layout.authBg,
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            inset: "-30%",
+            background:
+              "conic-gradient(from 150deg at 0% 0%, rgba(56,189,248,0.3), transparent 40%, rgba(129,140,248,0.28), transparent 70%, rgba(56,189,248,0.3))",
+            opacity: 0.9,
+            filter: "blur(70px)",
+          },
+        })}
       >
-        <Container>
-          <Typography variant="h3" fontWeight="bold" gutterBottom>
+        <Container sx={{ position: "relative", zIndex: 1 }}>
+          <Typography
+            variant="overline"
+            color="primary.main"
+            sx={{ letterSpacing: 1.2 }}
+          >
+            Our services
+          </Typography>
+          <Typography
+            variant="h3"
+            fontWeight="bold"
+            gutterBottom
+            sx={{ mt: 1 }}
+          >
             Our{" "}
             <Box component="span" color="primary.main">
-              Healthcare Services
+              healthcare services
             </Box>
           </Typography>
           <Typography
@@ -101,73 +125,99 @@ const ServicesPage: React.FC = () => {
             maxWidth="md"
             mx="auto"
           >
-            Expert medical care—online or in-person—designed around your needs.
+            Expert medical care—online or in person—designed around your needs.
           </Typography>
         </Container>
       </Box>
       <Box sx={{ py: 8 }}>
         <Container>
           <Grid container spacing={4}>
-            {services.map((service, idx) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    borderRadius: 4,
-                    boxShadow: 3,
-                    textAlign: "center",
-                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                    "&:hover": {
-                      transform: "translateY(-6px)",
-                      boxShadow: 6,
-                    },
-                  }}
-                >
-                  <CardContent sx={{ p: 4 }}>
-                    <Box mb={2}>{service.icon}</Box>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
-                      {service.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {service.desc}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+            {services.map((service, idx) => {
+              const Icon = service.icon;
+              return (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+                  <Card
+                    sx={{
+                      height: "100%",
+                      borderRadius: 4,
+                      textAlign: "center",
+                      background: theme.palette.glass.soft,
+                      border: `1px solid ${theme.palette.glass.cardBorder}`,
+                      boxShadow: theme.palette.glass.cardShadow,
+                      backdropFilter: "blur(18px)",
+                      transition:
+                        "transform 0.25s ease-out, box-shadow 0.25s ease-out, border-color 0.25s ease-out",
+                      "&:hover": {
+                        transform: "translateY(-6px)",
+                        boxShadow:
+                          "0 26px 60px rgba(15,23,42,0.85), 0 0 0 1px rgba(129,140,248,0.5)",
+                        borderColor: "rgba(129,140,248,0.7)",
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 4 }}>
+                      <Box
+                        mb={2}
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 64,
+                          height: 64,
+                          borderRadius: "50%",
+                          backgroundColor:
+                            theme.palette.mode === "dark"
+                              ? "rgba(37,99,235,0.18)"
+                              : "rgba(191,219,254,0.7)",
+                        }}
+                      >
+                        <Icon size={30} color={iconColor} />
+                      </Box>
+                      <Typography
+                        variant="h6"
+                        fontWeight={600}
+                        gutterBottom
+                        sx={{ mt: 1 }}
+                      >
+                        {service.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {service.desc}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
           </Grid>
         </Container>
       </Box>
       <Box
-        sx={{
+        sx={(t) => ({
           py: 8,
           textAlign: "center",
-          color: "#fff",
-          background: theme.palette.primary.main,
-        }}
+          color: t.palette.text.primary,
+          background: t.palette.gradient.primary,
+        })}
       >
         <Container>
           <Typography variant="h5" fontWeight="bold" mb={1}>
-            Can’t Visit In Person?
+            Can’t visit in person?
           </Typography>
           <Typography mb={4}>
-            Get care from home with our secure video consultations.
+            Get care from home with secure, high‑quality video consultations.
           </Typography>
           <Button
             variant="contained"
+            color="secondary"
             sx={{
-              backgroundColor: "#fff",
-              color: theme.palette.primary.main,
-              fontWeight: "bold",
+              borderRadius: 999,
               px: 4,
               py: 1.5,
-              borderRadius: 50,
-              "&:hover": {
-                backgroundColor: "#f5f5f5",
-              },
+              fontWeight: "bold",
             }}
           >
-            Start Virtual Visit
+            Start virtual visit
           </Button>
         </Container>
       </Box>
@@ -183,9 +233,11 @@ const ServicesPage: React.FC = () => {
       >
         <Container>
           <Typography color="text.secondary" variant="body2">
-            <strong>Medical Emergency?</strong> Call local emergency services
-            immediately. Our clinic handles non-life-threatening conditions
-            only.
+            <Box component="span" sx={{ fontWeight: 600 }}>
+              Medical emergency?
+            </Box>{" "}
+            Call local emergency services immediately. Our clinic handles
+            non‑life‑threatening conditions only.
           </Typography>
         </Container>
       </Box>

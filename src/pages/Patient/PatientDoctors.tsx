@@ -1,11 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import {
-  Autocomplete,
   Box,
-  TextField,
   Table,
-  TableHead,
   TableRow,
   TableCell,
   TableBody,
@@ -14,11 +11,20 @@ import {
   CircularProgress,
   Divider,
   useMediaQuery,
-  Button,
 } from "@mui/material";
-import { useThemeContext } from "../../context/ThemeContext";
-import { getPatientStyles } from "../../themes/theme";
 import useDebounce from "../../components/Debounce";
+import {
+  AutoText,
+  CardContentBox,
+  DefaultButton,
+  FilterAutocomplete,
+  FilterWrapper,
+  PageTitle,
+  PaginationBox,
+  PatientCard,
+  PatientContainer,
+  PatientTableHead,
+} from "../../components/styledcomp";
 interface Doctor {
   _id: string;
   fullName: string;
@@ -35,14 +41,12 @@ interface Doctor {
 const PatientDoctors: React.FC<{ patientId: string | null }> = ({
   patientId,
 }) => {
-  const { mode } = useThemeContext();
-  const styles = getPatientStyles(mode);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [filtered, setFiltered] = useState<Doctor[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const isMobile = useMediaQuery("(max-width:768px)");
+  const isMobile = useMediaQuery("(max-width:900px)");
   const [currentPage, setCurrentPage] = useState(1);
   const doctorsPerPage = 10;
   const debouncedSearch = useDebounce(searchValue, 400);
@@ -92,17 +96,15 @@ const PatientDoctors: React.FC<{ patientId: string | null }> = ({
       </Box>
     );
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h5" sx={styles.title}>
-        Doctors You’ve Consulted
-      </Typography>
-      <Box>
-        <Autocomplete
+    <PatientContainer>
+      <PageTitle variant="h5">Doctors You’ve Consulted</PageTitle>
+      <FilterWrapper>
+        <FilterAutocomplete
           value={searchValue}
           onInputChange={(_e, newValue) => setSearchValue(newValue)}
           options={doctors.map((d) => d.fullName)}
           renderInput={(params) => (
-            <TextField
+            <AutoText
               {...params}
               label="Search Doctor"
               variant="outlined"
@@ -110,28 +112,33 @@ const PatientDoctors: React.FC<{ patientId: string | null }> = ({
               placeholder="Type doctor name..."
             />
           )}
-          sx={styles.filterField}
         />
-      </Box>
+      </FilterWrapper>
       <Divider sx={{ m: 2 }} />
       {isMobile ? (
         <Box>
           {currentDoctors.length > 0 ? (
             currentDoctors.map((p, i) => (
-              <Paper key={p._id} sx={styles.patientCard}>
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                  {indexOfFirst + i + 1}. {p.fullName}
-                </Typography>
-                <div>
-                  <strong>Specialty:</strong> {p.specialization || "-"}
-                </div>
-                <div>
-                  <strong>License:</strong> {p.licenseNumber || "-"}
-                </div>
-                <div>
-                  <strong>Phone:</strong> {p.contact?.phone || "-"}
-                </div>
-              </Paper>
+              <PatientCard key={p._id}>
+                <CardContentBox>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    sx={{ mb: 1 }}
+                  >
+                    {indexOfFirst + i + 1}. {p.fullName}
+                  </Typography>
+                  <div>
+                    <strong>Specialty:</strong> {p.specialization || "-"}
+                  </div>
+                  <div>
+                    <strong>License:</strong> {p.licenseNumber || "-"}
+                  </div>
+                  <div>
+                    <strong>Phone:</strong> {p.contact?.phone || "-"}
+                  </div>
+                </CardContentBox>
+              </PatientCard>
             ))
           ) : (
             <Typography align="center" color="text.secondary" py={3}>
@@ -140,12 +147,23 @@ const PatientDoctors: React.FC<{ patientId: string | null }> = ({
           )}
         </Box>
       ) : (
-        <Paper>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            overflow: "auto",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
           <Table>
-            <TableHead sx={styles.tableHead}>
+            <PatientTableHead>
               <TableRow
                 sx={{
-                  "& .MuiTableCell-root": { py: 1, height: 24 },
+                  backgroundColor: "action.hover",
+                  "& th": {
+                    fontWeight: 600,
+                  },
                 }}
               >
                 <TableCell>Doctor Name</TableCell>
@@ -154,14 +172,14 @@ const PatientDoctors: React.FC<{ patientId: string | null }> = ({
                 <TableCell>Experience</TableCell>
                 <TableCell>Phone</TableCell>
               </TableRow>
-            </TableHead>
+            </PatientTableHead>
             <TableBody>
               {currentDoctors.map((d) => (
                 <TableRow
                   key={d._id}
                   hover
                   sx={{
-                    "& .MuiTableCell-root": { py: 1, height: 24 },
+                    "& .MuiTableCell-root": { py: 0.3, height: 24 },
                   }}
                 >
                   <TableCell>{d.fullName}</TableCell>
@@ -175,28 +193,28 @@ const PatientDoctors: React.FC<{ patientId: string | null }> = ({
           </Table>
         </Paper>
       )}
-      <Box sx={styles.paginationBox}>
+      <PaginationBox>
         <Typography variant="body2">
           Showing {(currentPage - 1) * doctorsPerPage + 1}–
           {Math.min(currentPage * doctorsPerPage, filtered.length)} of{" "}
           {filtered.length}
         </Typography>
         <Box>
-          <Button
+          <DefaultButton
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
-            Prev
-          </Button>
-          <Button
+            <Typography variant="body2">Prev</Typography>
+          </DefaultButton>
+          <DefaultButton
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
-            Next
-          </Button>
+            <Typography variant="body2">Next</Typography>
+          </DefaultButton>
         </Box>
-      </Box>
-    </Box>
+      </PaginationBox>
+    </PatientContainer>
   );
 };
 export default PatientDoctors;

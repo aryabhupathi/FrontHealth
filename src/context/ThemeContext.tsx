@@ -1,57 +1,51 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useMemo, useState, useEffect } from "react";
-import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
+
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import type { PaletteMode } from "@mui/material";
+import { getTheme } from "../themes/theme";
+
 interface ThemeContextType {
-  [x: string]: any;
-  mode: "light" | "dark";
+  mode: PaletteMode;
   toggleTheme: () => void;
 }
+
 const ThemeContext = createContext<ThemeContextType>({
   mode: "light",
   toggleTheme: () => {},
 });
+
 export const useThemeContext = () => useContext(ThemeContext);
+
 export const CustomThemeProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const [mode, setMode] = useState<"light" | "dark">("light");
+  const [mode, setMode] = useState<PaletteMode>("light");
+
   useEffect(() => {
-    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
+    const saved = localStorage.getItem("theme") as PaletteMode | null;
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)"
     ).matches;
     setMode(saved || (prefersDark ? "dark" : "light"));
   }, []);
+
   const toggleTheme = () => {
-    const newMode = mode === "light" ? "dark" : "light";
-    setMode(newMode);
-    localStorage.setItem("theme", newMode);
+    const next = mode === "light" ? "dark" : "light";
+    setMode(next);
+    localStorage.setItem("theme", next);
   };
-  const theme = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode,
-          ...(mode === "light"
-            ? {
-                primary: { main: "#1976d2" },
-                background: { default: "#f8f9fa", paper: "#fff" },
-              }
-            : {
-                primary: { main: "#90caf9" },
-                background: { default: "#121212", paper: "#1e1e1e" },
-              }),
-        },
-        typography: {
-          fontFamily: "Inter, Roboto, sans-serif",
-        },
-        shape: { borderRadius: 10 },
-      }),
-    [mode]
-  );
+
+  const theme = useMemo(() => getTheme(mode), [mode]);
+
   return (
     <ThemeContext.Provider value={{ mode, toggleTheme }}>
       <ThemeProvider theme={theme}>

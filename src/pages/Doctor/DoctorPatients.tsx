@@ -1,28 +1,32 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   Table,
-  TableHead,
   TableRow,
   TableCell,
   TableBody,
   Paper,
-  TextField,
-  Autocomplete,
-  Button,
   useMediaQuery,
   Collapse,
   IconButton,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import { useAuth } from "../../context/AuthContext";
 import useDebounce from "../../components/Debounce";
-import { useThemeContext } from "../../context/ThemeContext";
-import { getPatientStyles, TypedButton } from "../../themes/theme";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import {
+  AutoText,
+  CardContentBox,
+  DefaultButton,
+  DeleteButton,
+  FilterAutocomplete,
+  FilterWrapper,
+  PageTitle,
+  PaginationBox,
+  PatientCard,
+  PatientContainer,
+  PatientTableHead,
+} from "../../components/styledcomp";
 interface Patient {
   _id: string;
   fullName: string;
@@ -40,19 +44,13 @@ interface DoctorPatientsProps {
 }
 const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
   const { user } = useAuth();
-  const theme = useTheme();
-  const { mode } = useThemeContext();
-  const styles = getPatientStyles(mode);
-  const isMobile = useMediaQuery("(max-width:768px)");
+  const isMobile = useMediaQuery("(max-width:900px)");
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
-  // Filters
   const [query, setQuery] = useState("");
   const [condition, setCondition] = useState("");
   const [bloodGroup, setBloodGroup] = useState("");
-  // Debounced search
   const debouncedSearch = useDebounce(query, 400);
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [filterOpen, setFilterOpen] = useState(false);
@@ -80,7 +78,6 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
     });
     return Array.from(list);
   }, [patients]);
-  // FILTERING
   const filteredPatients = useMemo(() => {
     return patients.filter((p) => {
       const q = debouncedSearch.toLowerCase();
@@ -92,7 +89,6 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
       return matchesQuery && matchesBlood && matchesCondition;
     });
   }, [patients, debouncedSearch, bloodGroup, condition]);
-  // PAGINATION
   const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
   const paginatedPatients = filteredPatients.slice(
     (currentPage - 1) * itemsPerPage,
@@ -100,27 +96,23 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
   );
   if (loading) return <Box p={3}>Loading patients...</Box>;
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h5" sx={styles.title}>
-        Doctors You’ve Consulted
-      </Typography>
+    <PatientContainer>
+      <PageTitle variant="h5">Patients You’ve Treated</PageTitle>
       <Box display="flex" alignItems="center" gap={1}>
         <Typography variant="h6">Filters</Typography>
         <IconButton onClick={() => setFilterOpen((prev) => !prev)} size="small">
           {filterOpen ? <ExpandLess /> : <ExpandMore />}
         </IconButton>
       </Box>
-      {/* Filters */}
       <Collapse in={filterOpen} sx={{ py: 1 }}>
-        <Box sx={styles.filterBox}>
-          <Autocomplete
+        <FilterWrapper>
+          <FilterAutocomplete
             value={query}
             onInputChange={(_e, newValue) => setQuery(newValue)}
             options={patients.map((d) => d.fullName)}
             renderInput={(params) => (
-              <TextField
+              <AutoText
                 {...params}
-                label="Search Doctor"
                 variant="outlined"
                 size="small"
                 fullWidth
@@ -129,9 +121,8 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
               />
             )}
             size="small"
-            sx={styles.filterField}
           />
-          <Autocomplete
+          <FilterAutocomplete
             options={allConditions}
             value={condition}
             onChange={(_, val) => {
@@ -139,12 +130,11 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
               setCurrentPage(1);
             }}
             renderInput={(params) => (
-              <TextField {...params} label="Condition" size="small" />
+              <AutoText {...params} label="Condition" size="small" />
             )}
             size="small"
-            sx={styles.filterField}
           />
-          <Autocomplete
+          <FilterAutocomplete
             options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]}
             value={bloodGroup || ""}
             onChange={(_, val) => {
@@ -152,13 +142,11 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
               setCurrentPage(1);
             }}
             renderInput={(params) => (
-              <TextField {...params} label="Blood Group" size="small" />
+              <AutoText {...params} label="Blood Group" size="small" />
             )}
-            sx={styles.filterField}
             size="small"
           />
-          <TypedButton
-            btntype="delete"
+          <DeleteButton
             size="small"
             onClick={() => {
               setBloodGroup("");
@@ -167,20 +155,14 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
             }}
           >
             Clear
-          </TypedButton>
-        </Box>
+          </DeleteButton>
+        </FilterWrapper>
       </Collapse>
-      {/* Desktop Table */}
-
-      {/* Mobile Cards */}
       {isMobile ? (
         <Box display="flex" flexDirection="column" gap={2}>
           {paginatedPatients.map((p) => (
-            <Card
-              key={p._id}
-              sx={{ borderRadius: 3, boxShadow: theme.shadows[2] }}
-            >
-              <CardContent sx={styles.cardContent}>
+            <PatientCard key={p._id}>
+              <CardContentBox>
                 <Typography fontWeight={600}>{p.fullName}</Typography>
                 <Typography variant="body2">ID: {p.patientId}</Typography>
                 <Typography variant="body2">Gender: {p.gender}</Typography>
@@ -193,19 +175,27 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
                 <Typography variant="body2">
                   Phone: {p.contact?.phone || "-"}
                 </Typography>
-              </CardContent>
-            </Card>
+              </CardContentBox>
+            </PatientCard>
           ))}
         </Box>
       ) : (
-        <Paper>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            overflow: "auto",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
           <Table>
-            <TableHead sx={styles.tableHead}>
+            <PatientTableHead>
               <TableRow
                 sx={{
-                  "& .MuiTableCell-root": {
-                    py: 0.3,
-                    height: 24,
+                  backgroundColor: "action.hover",
+                  "& th": {
+                    fontWeight: 600,
                   },
                 }}
               >
@@ -215,7 +205,7 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
                 <TableCell>Conditions</TableCell>
                 <TableCell>Phone</TableCell>
               </TableRow>
-            </TableHead>
+            </PatientTableHead>
             <TableBody>
               {paginatedPatients.map((p) => (
                 <TableRow
@@ -223,7 +213,7 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
                   hover
                   sx={{
                     "& .MuiTableCell-root": {
-                      py: 1,
+                      py: 0.3,
                       height: 24,
                     },
                   }}
@@ -239,29 +229,28 @@ const DoctorPatients: React.FC<DoctorPatientsProps> = ({ doctorId }) => {
           </Table>
         </Paper>
       )}
-      {/* PAGINATION */}
-      <Box sx={styles.paginationBox}>
+      <PaginationBox>
         <Typography variant="body2">
           Showing {(currentPage - 1) * itemsPerPage + 1}–
           {Math.min(currentPage * itemsPerPage, filteredPatients.length)} of{" "}
           {filteredPatients.length}
         </Typography>
         <Box>
-          <Button
+          <DefaultButton
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
-            Prev
-          </Button>
-          <Button
+            <Typography variant="body2">Prev</Typography>
+          </DefaultButton>
+          <DefaultButton
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
-            Next
-          </Button>
+            <Typography variant="body2">Next</Typography>
+          </DefaultButton>
         </Box>
-      </Box>
-    </Box>
+      </PaginationBox>
+    </PatientContainer>
   );
 };
 export default DoctorPatients;

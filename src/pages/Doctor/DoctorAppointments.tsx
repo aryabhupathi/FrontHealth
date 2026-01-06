@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import {
   Box,
-  Button,
   Chip,
   Dialog,
   DialogActions,
@@ -10,26 +9,37 @@ import {
   DialogTitle,
   Grid,
   TextField,
-  Autocomplete,
   Typography,
   Table,
-  TableHead,
   TableBody,
   TableCell,
   TableRow,
   Paper,
   IconButton,
   Collapse,
-  useMediaQuery
+  useMediaQuery,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import useDebounce from "../../components/Debounce";
-import { useThemeContext } from "../../context/ThemeContext";
-import { getPatientStyles, TypedButton } from "../../themes/theme";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import {
+  AutoText,
+  CardContentBox,
+  CardHeaderBox,
+  CardTitle,
+  DefaultButton,
+  DeleteButton,
+  FilterAutocomplete,
+  FilterWrapper,
+  PageTitle,
+  PaginationBox,
+  PatientCard,
+  PatientContainer,
+  PatientTableHead,
+  SaveButton,
+} from "../../components/styledcomp";
 interface PatientData {
   _id: string;
   fullName: string;
@@ -48,6 +58,11 @@ interface Medicine {
   dosage: string;
   frequency: string;
   duration: string;
+}
+interface LabTest {
+  _id: string;
+  name: string;
+  instructions?: string;
 }
 const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -71,11 +86,18 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
   ]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const { mode } = useThemeContext();
-  const styles = getPatientStyles(mode);
+  const [labTests, setLabTests] = useState<LabTest[]>([]);
+  const [selectedTests, setSelectedTests] = useState<LabTest[]>([]);
+  const [selectedTestName, setSelectedTestName] = useState("");
   useEffect(() => {
     setCurrentPage(1);
   }, [searchName, appointmentDate, condition]);
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_BACK_URL}/labtests`)
+      .then((res) => res.json())
+      .then((data) => setLabTests(data.filter((t: any) => t.isActive)))
+      .catch(console.error);
+  }, []);
   useEffect(() => {
     if (!doctorId) return;
     fetch(`${import.meta.env.VITE_BACK_URL}/appointment/doctor/${doctorId}`)
@@ -127,17 +149,56 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
       { name: "", dosage: "", frequency: "", duration: "" },
     ]);
   };
+  const resetPrescriptionState = () => {
+    setDiagnosis("");
+    setAdvice("");
+    setMedicines([{ name: "", dosage: "", frequency: "", duration: "" }]);
+    setSelectedTests([]);
+    setSelectedAppointment(null);
+  };
   const removeMedicine = (index: number) => {
     setMedicines(medicines.filter((_, i) => i !== index));
   };
-  const handleSavePrescription = () => {
-    alert("Prescription Saved!");
-    setShowModal(false);
+  const handleSavePrescription = async () => {
+    if (!selectedAppointment) return;
+    try {
+      const payload = {
+        appointment: selectedAppointment._id,
+        doctor: doctorId,
+        patient: selectedAppointment.patient._id,
+        diagnosis,
+        advice,
+        medicines,
+        tests: selectedTests.map((t) => ({
+          test: t._id,
+          instructions: t.instructions || "",
+        })),
+      };
+      const res = await fetch(`${import.meta.env.VITE_BACK_URL}/prescription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to save prescription");
+      alert("Prescription saved successfully");
+      resetPrescriptionState();
+      setShowModal(false);
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a._id === selectedAppointment._id ? { ...a, status: "Completed" } : a
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Error saving prescription");
+    }
   };
   const fetchPrescription = async (appointmentId: string) => {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_BACK_URL}/prescription/appointment/${appointmentId}`
+        `${
+          import.meta.env.VITE_BACK_URL
+        }/prescription/appointment/${appointmentId}`
       );
       const data = await res.json();
       if (res.ok) setViewPrescription(data);
@@ -146,11 +207,10 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
       console.error(err);
     }
   };
+  console.log(labTests, "llllllllllllll");
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h5" sx={styles.title}>
-        My Appointments
-      </Typography>
+    <PatientContainer>
+      <PageTitle variant="h5">My Appointments</PageTitle>
       <Box display="flex" alignItems="center" gap={1}>
         <Typography variant="h6">Filters</Typography>
         <IconButton size="small" onClick={() => setFilterOpen((p) => !p)}>
@@ -158,13 +218,13 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
         </IconButton>
       </Box>
       <Collapse in={filterOpen} sx={{ py: 1 }}>
-        <Box sx={styles.filterBox}>
-          <Autocomplete
+        <FilterWrapper>
+          <FilterAutocomplete
             options={[...new Set(appointments.map((a) => a.patient.fullName))]}
             value={searchName}
             onInputChange={(_, v) => setSearchName(v)}
             renderInput={(params) => (
-              <TextField
+              <AutoText
                 {...params}
                 label="Patient Name"
                 size="small"
@@ -172,7 +232,6 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
                 sx={{ minWidth: { sm: 180 } }}
               />
             )}
-            sx={styles.filterField}
             size="small"
           />
           <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -193,19 +252,17 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
               }}
             />
           </LocalizationProvider>
-          <Autocomplete
+          <FilterAutocomplete
             options={conditionOptions}
             value={condition}
             onChange={(_, v) => setCondition(v || "")}
             renderInput={(params) => (
-              <TextField {...params} label="Condition" size="small" />
+              <AutoText {...params} label="Condition" size="small" />
             )}
             fullWidth
             size="small"
-            sx={styles.filterField}
           />
-          <TypedButton
-            btntype="delete"
+          <DeleteButton
             size="small"
             onClick={() => {
               setSearchName("");
@@ -214,18 +271,26 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
             }}
           >
             Clear
-          </TypedButton>
-        </Box>
+          </DeleteButton>
+        </FilterWrapper>
       </Collapse>
       {!isMobile ? (
-        <Paper>
+        <Paper
+          elevation={1}
+          sx={{
+            borderRadius: 1,
+            overflow: "auto",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
           <Table>
-            <TableHead sx={styles.tableHead}>
+            <PatientTableHead>
               <TableRow
                 sx={{
-                  "& .MuiTableCell-root": {
-                    py: 0.3,
-                    height: 24,
+                  backgroundColor: "action.hover",
+                  "& th": {
+                    fontWeight: 600,
                   },
                 }}
               >
@@ -236,7 +301,7 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
                 <TableCell>Status</TableCell>
                 <TableCell>Prescription</TableCell>
               </TableRow>
-            </TableHead>
+            </PatientTableHead>
             <TableBody>
               {paginateditems.length ? (
                 paginateditems.map((a) => (
@@ -245,7 +310,7 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
                     key={a._id}
                     sx={{
                       "& .MuiTableCell-root": {
-                        py: 1,
+                        py: 0.3,
                         height: 24,
                       },
                     }}
@@ -272,22 +337,18 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
                     </TableCell>
                     <TableCell>
                       {a.status !== "Completed" ? (
-                        <TypedButton
-                          btntype="primary"
+                        <SaveButton
                           onClick={() => {
                             setSelectedAppointment(a);
                             setShowModal(true);
                           }}
                         >
                           Add Prescription
-                        </TypedButton>
+                        </SaveButton>
                       ) : (
-                        <TypedButton
-                          btntype="secondary"
-                          onClick={() => fetchPrescription(a._id)}
-                        >
+                        <DefaultButton onClick={() => fetchPrescription(a._id)}>
                           View Prescription
-                        </TypedButton>
+                        </DefaultButton>
                       )}
                     </TableCell>
                   </TableRow>
@@ -305,11 +366,11 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
       ) : (
         <Box display="flex" flexDirection="column" gap={2}>
           {paginateditems.map((a) => (
-            <Paper key={a._id} sx={styles.patientCard}>
-              <Box sx={styles.cardHeader}>
-                <Typography variant="h6">{a.patient.fullName}</Typography>
-              </Box>
-              <Box sx={styles.cardContent}>
+            <PatientCard key={a._id}>
+              <CardHeaderBox>
+                <CardTitle>{a.patient.fullName}</CardTitle>
+              </CardHeaderBox>
+              <CardContentBox>
                 <Typography>
                   <strong>Date:</strong> {a.date}
                 </Typography>
@@ -334,45 +395,47 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
                     }
                   />
                 </Box>
-              </Box>
-            </Paper>
+              </CardContentBox>
+            </PatientCard>
           ))}
         </Box>
       )}
-      <Box sx={styles.paginationBox} mt={2}>
+      <PaginationBox>
         <Typography variant="body2">
           Showing {(currentPage - 1) * itemsPerPage + 1}–
           {Math.min(currentPage * itemsPerPage, paginateditems.length)} of{" "}
           {paginateditems.length}
         </Typography>
         <Box display="flex" gap={1}>
-          <Button
+          <DefaultButton
             variant="outlined"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
-            Prev
-          </Button>
-          <Button
+            <Typography variant="body2">Prev</Typography>
+          </DefaultButton>
+          <DefaultButton
             variant="outlined"
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
-            Next
-          </Button>
+            <Typography variant="body2">Next</Typography>
+          </DefaultButton>
         </Box>
-      </Box>
-      <Dialog open={showModal} onClose={() => setShowModal(false)} fullWidth>
-        <DialogTitle sx={{ display: "flex", justifyContent: "center" }}>
+      </PaginationBox>
+      <Dialog
+        open={showModal}
+        onClose={() => {
+          resetPrescriptionState();
+          setShowModal(false);
+        }}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle sx={{ textAlign: "center" }}>
           Prescription for {selectedAppointment?.patient.fullName}
-          <IconButton
-            sx={{ position: "absolute", right: 8, top: 8 }}
-            onClick={() => setShowModal(false)}
-          >
-            <CloseIcon />
-          </IconButton>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           <TextField
             fullWidth
             label="Diagnosis *"
@@ -380,8 +443,8 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
             rows={2}
             value={diagnosis}
             onChange={(e) => setDiagnosis(e.target.value)}
-            sx={{ my: 1 }}
             size="small"
+            sx={{ mb: 2 }}
           />
           <TextField
             fullWidth
@@ -390,74 +453,121 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
             rows={2}
             value={advice}
             onChange={(e) => setAdvice(e.target.value)}
-            sx={{ my: 1 }}
             size="small"
+            sx={{ mb: 3 }}
           />
-          <Typography variant="subtitle1" mt={2}>
-            Medicines
-          </Typography>
-          {medicines.map((m, index) => (
-            <>
-              <Typography variant="subtitle1" fontWeight="600">
-                Medicine {index + 1}
-              </Typography>
-              <Box
-                key={index}
-                sx={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 2,
-                  mt: 2,
+          <Box mb={3}>
+            <Typography variant="h6" mb={1}>
+              Prescribed Tests
+            </Typography>
+            <FilterAutocomplete
+              options={[...new Set(labTests.map((t) => t.name))]}
+              inputValue={selectedTestName}
+              onInputChange={(_, newInputValue) => {
+                setSelectedTestName(newInputValue);
+              }}
+              onChange={(_, value) => {
+                if (!value) return;
+                const test = labTests.find((t) => t.name === value);
+                if (!test) return;
+                setSelectedTests((prev) =>
+                  prev.some((t) => t._id === test._id)
+                    ? prev
+                    : [...prev, { ...test }]
+                );
+                setSelectedTestName("");
+              }}
+              renderInput={(params) => (
+                <AutoText
+                  {...params}
+                  label="Select Test"
+                  size="small"
+                  placeholder="Choose lab test"
+                />
+              )}
+            />
+            {selectedTests.map((t, index) => (
+              <TextField
+                key={t._id}
+                fullWidth
+                size="small"
+                label={`Instructions for ${t.name}`}
+                placeholder="e.g. 12 hours fasting"
+                value={t.instructions || ""}
+                sx={{ mt: 1 }}
+                onChange={(e) => {
+                  const copy = [...selectedTests];
+                  copy[index] = {
+                    ...copy[index],
+                    instructions: e.target.value,
+                  };
+                  setSelectedTests(copy);
                 }}
-              >
-                <Grid container spacing={2} sx={{ flex: 1 }}>
-                  {["name", "dosage", "frequency", "duration"].map((field) => (
-                    <Grid key={field} size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label={field.toUpperCase()}
-                        value={(m as any)[field]}
-                        size="small"
-                        onChange={(e) =>
-                          handleMedicineChange(
-                            index,
-                            field as keyof Medicine,
-                            e.target.value
-                          )
-                        }
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-                {medicines.length > 1 && (
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <TypedButton
-                      btntype="delete"
+              />
+            ))}
+          </Box>
+          <Box mb={2}>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Typography variant="h6">Medicines</Typography>
+              <SaveButton size="small" onClick={addMedicine}>
+                + Add Medicine
+              </SaveButton>
+            </Box>
+            {medicines.map((m, index) => (
+              <Box key={index} mt={2}>
+                <Box display="flex" justifyContent="space-between" mb={1}>
+                  <Typography variant="subtitle1">
+                    Medicine {index + 1}
+                  </Typography>
+                  {medicines.length > 1 && (
+                    <DeleteButton
                       size="small"
                       onClick={() => removeMedicine(index)}
                     >
-                      X
-                    </TypedButton>
-                  </Box>
-                )}
+                      Remove
+                    </DeleteButton>
+                  )}
+                </Box>
+                <Grid container spacing={1}>
+                  {(["name", "dosage", "frequency", "duration"] as const).map(
+                    (field) => (
+                      <Grid key={field} size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label={field.toUpperCase()}
+                          value={m[field]}
+                          onChange={(e) =>
+                            handleMedicineChange(index, field, e.target.value)
+                          }
+                        />
+                      </Grid>
+                    )
+                  )}
+                </Grid>
               </Box>
-            </>
-          ))}
-          <TypedButton btntype="primary" onClick={addMedicine} sx={{ mt: 1 }}>
-            + Add Medicine
-          </TypedButton>
+            ))}
+          </Box>
         </DialogContent>
         <DialogActions>
-          <TypedButton btntype="delete" onClick={() => setShowModal(false)}>
+          <DeleteButton
+            onClick={() => {
+              resetPrescriptionState();
+              setShowModal(false);
+            }}
+          >
             Cancel
-          </TypedButton>
-          <TypedButton
-            btntype="primary"
+          </DeleteButton>
+          <SaveButton
             onClick={handleSavePrescription}
             disabled={!diagnosis.trim()}
           >
-            Save
-          </TypedButton>
+            Save Prescription
+          </SaveButton>
         </DialogActions>
       </Dialog>
       <Dialog
@@ -491,7 +601,7 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
           )}
         </DialogContent>
       </Dialog>
-    </Box>
+    </PatientContainer>
   );
 };
 export default DoctorAppointments;

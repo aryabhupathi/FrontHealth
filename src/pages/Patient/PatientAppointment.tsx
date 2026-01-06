@@ -2,36 +2,43 @@
 import { useEffect, useState } from "react";
 import {
   Box,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Table,
-  TableHead,
   TableRow,
   TableCell,
   TableBody,
   Paper,
   Typography,
-  Card,
-  CardContent,
   Divider,
   useMediaQuery,
-  Autocomplete,
   TextField,
   Collapse,
   IconButton,
 } from "@mui/material";
 import BookAppointment from "../../components/BookAppointment";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { useThemeContext } from "../../context/ThemeContext";
-import { getPatientStyles, TypedButton } from "../../themes/theme";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
+import {
+  AddButton,
+  AutoText,
+  CardContentBox,
+  DefaultButton,
+  DeleteButton,
+  FilterAutocomplete,
+  FilterWrapper,
+  PageTitle,
+  PaginationBox,
+  PatientCard,
+  PatientContainer,
+  PatientTableHead,
+  SaveButton,
+} from "../../components/styledcomp";
 interface Doctor {
   _id: string;
   fullName: string;
@@ -62,9 +69,7 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
   const [showBooking, setShowBooking] = useState(false);
   const [selectedPrescription, setSelectedPrescription] =
     useState<Prescription | null>(null);
-  const { mode } = useThemeContext();
-  const styles = getPatientStyles(mode);
-  const isMobile = useMediaQuery("(max-width:700px)");
+  const isMobile = useMediaQuery("(max-width:900px)");
   const [filterDate, setFilterDate] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -87,20 +92,27 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
     const fetchData = async () => {
       try {
         const [appointmentsRes, prescriptionsRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_BACK_URL}/appointment/patient/${patientId}`),
-          fetch(`${import.meta.env.VITE_BACK_URL}/prescription/patient/${patientId}`),
+          fetch(
+            `${import.meta.env.VITE_BACK_URL}/appointment/patient/${patientId}`
+          ),
+          fetch(
+            `${import.meta.env.VITE_BACK_URL}/prescription/patient/${patientId}`
+          ),
         ]);
         const appointmentsData = await appointmentsRes.json();
         const prescriptionsData = await prescriptionsRes.json();
         const merged = appointmentsData.map((apt: Appointment) => {
-          const found = prescriptionsData.find(
-            (p: any) => p.appointment._id === apt._id
+          const prescription = prescriptionsData.find(
+            (p: any) => p.appointment && p.appointment._id === apt._id
           );
-          return { ...apt, prescription: found || null };
+          return {
+            ...apt,
+            prescription: prescription ?? null,
+          };
         });
         setAppointments(merged);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load appointments", err);
       }
     };
     fetchData();
@@ -114,10 +126,8 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
     setSelectedPrescription(p);
   };
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h5" sx={styles.title}>
-        My Appointments
-      </Typography>
+    <PatientContainer>
+      <PageTitle variant="h5">My Appointments</PageTitle>
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center" gap={1}>
           <Typography variant="h6">Filters</Typography>
@@ -128,92 +138,68 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
             {filterOpen ? <ExpandLess /> : <ExpandMore />}
           </IconButton>
         </Box>
-        <TypedButton btntype="primary" onClick={() => setShowBooking(true)}>
+        <AddButton onClick={() => setShowBooking(true)}>
           + Book Appointmnet
-        </TypedButton>
+        </AddButton>
       </Box>
       <Collapse in={filterOpen} sx={{ py: 1 }}>
-        <Box sx={styles.filterBox}>
-          <Autocomplete
+        <FilterWrapper>
+          <FilterAutocomplete
             options={[...new Set(appointments.map((a) => a.doctor.fullName))]}
             value={filterDoctor}
             onInputChange={(_, value) => setSearchName(value)}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Doctor Name"
-                size="small"
-              />
+              <AutoText {...params} label="Doctor Name" size="small" />
             )}
-            sx={styles.filterField}
           />
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-          {/* <DatePicker
-  label="Select Date"
-  value={filterDate ? dayjs(filterDate) : null}
-  onChange={(newValue) => {
-    setFilterDate(newValue ? newValue.format("YYYY-MM-DD") : "");
-  }}
-  slotProps={{
-    textField: {
-      size: "small",
-    },
-  }}
-/> */}
-<DatePicker
-  label="Select Date"
-  value={filterDate ? dayjs(filterDate) : null}
-  onChange={(newValue) => {
-    if (!newValue) {
-      setFilterDate("");
-      return;
-    }
-
-    // Ensure the value is Dayjs before calling .format()
-    if (dayjs.isDayjs(newValue)) {
-      setFilterDate(newValue.format("YYYY-MM-DD"));
-    } else {
-      // If newValue is a Date fallback
-      setFilterDate(dayjs(newValue).format("YYYY-MM-DD"));
-    }
-  }}
-  slotProps={{
-    textField: {
-      size: "small",
-    },
-  }}
-/>
-
-</LocalizationProvider>
-
-          <Autocomplete
+            <DatePicker
+              label="Select Date"
+              value={filterDate ? dayjs(filterDate) : null}
+              onChange={(newValue) => {
+                if (!newValue) {
+                  setFilterDate("");
+                  return;
+                }
+                if (dayjs.isDayjs(newValue)) {
+                  setFilterDate(newValue.format("YYYY-MM-DD"));
+                } else {
+                  setFilterDate(dayjs(newValue).format("YYYY-MM-DD"));
+                }
+              }}
+              slotProps={{
+                textField: {
+                  size: "small",
+                },
+              }}
+            />
+          </LocalizationProvider>
+          <FilterAutocomplete
             options={["Pending", "Approved", "Completed", "Cancelled"]}
             value={filterStatus || ""}
             onChange={(_, value) => setFilterStatus(value || "")}
             renderInput={(params) => (
               <TextField {...params} label="Status" size="small" fullWidth />
             )}
-            sx={styles.filterField}
-          /><TypedButton
-  btntype="delete"
-  size="small"
-  onClick={() => {
-    setFilterDate("");
-    setFilterStatus("");
-    setSearchName("");
-  }}
->
-  Clear
-</TypedButton>
-
-        </Box>
+          />
+          <DeleteButton
+            size="small"
+            onClick={() => {
+              setFilterDate("");
+              setFilterStatus("");
+              setSearchName("");
+            }}
+          >
+            Clear
+          </DeleteButton>
+        </FilterWrapper>
       </Collapse>
       {isMobile ? (
         <Box display="flex" flexDirection="column" gap={2}>
           {paginateditems.length ? (
             paginateditems.map((a) => (
-              <Card key={a._id} sx={styles.patientCard} >
-                <CardContent sx={styles.cardContent}>
+              <PatientCard>
+                <CardContentBox>
                   <Typography variant="h6" fontWeight={600}>
                     {a.doctor?.fullName}
                   </Typography>
@@ -232,19 +218,19 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
                   </Typography>
                   <Box mt={1}>
                     {a.prescription ? (
-                      <TypedButton btntype="secondary"
+                      <SaveButton
                         onClick={() => handleOpenPrescription(a.prescription!)}
                       >
                         View Prescription
-                      </TypedButton>
+                      </SaveButton>
                     ) : (
                       <Typography color="text.secondary">
                         No Prescription
                       </Typography>
                     )}
                   </Box>
-                </CardContent>
-              </Card>
+                </CardContentBox>
+              </PatientCard>
             ))
           ) : (
             <Typography align="center" mt={4}>
@@ -254,15 +240,25 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
         </Box>
       ) : (
         <Box>
-          <Paper sx={{ overflowX: "auto" }}>
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 2,
+              overflow: "auto",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
             <Table>
-              <TableHead sx={styles.tableHead}>
-                <TableRow sx={{
-                  "& .MuiTableCell-root": {
-                    py: 1,
-                    height: 24,
-                  },
-                }}>
+              <PatientTableHead>
+                <TableRow
+                  sx={{
+                    backgroundColor: "action.hover",
+                    "& th": {
+                      fontWeight: 600,
+                    },
+                  }}
+                >
                   <TableCell>Doctor</TableCell>
                   <TableCell>Date</TableCell>
                   <TableCell>Time</TableCell>
@@ -270,16 +266,19 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
                   <TableCell>Status</TableCell>
                   <TableCell>Prescription</TableCell>
                 </TableRow>
-              </TableHead>
+              </PatientTableHead>
               <TableBody>
                 {paginateditems.length ? (
                   paginateditems.map((a) => (
-                    <TableRow key={a._id} sx={{
-                  "& .MuiTableCell-root": {
-                    py: 1,
-                    height: 24,
-                  },
-                }}>
+                    <TableRow
+                      key={a._id}
+                      sx={{
+                        "& .MuiTableCell-root": {
+                          py: 0.3,
+                          height: 24,
+                        },
+                      }}
+                    >
                       <TableCell>{a.doctor?.fullName}</TableCell>
                       <TableCell>{a.date}</TableCell>
                       <TableCell>{a.time}</TableCell>
@@ -287,14 +286,14 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
                       <TableCell>{a.status}</TableCell>
                       <TableCell>
                         {a.prescription ? (
-                         <TypedButton btntype="secondary"
+                          <DefaultButton
                             onClick={() =>
                               handleOpenPrescription(a.prescription!)
                             }
                             size="small"
                           >
                             View
-                          </TypedButton>
+                          </DefaultButton>
                         ) : (
                           <Typography color="text.secondary">
                             Not issued
@@ -315,36 +314,38 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
           </Paper>
         </Box>
       )}
-      <Box sx={styles.paginationBox} mt={2}>
+      <PaginationBox>
         <Typography variant="body2">
           Showing {(currentPage - 1) * itemsPerPage + 1}–
           {Math.min(currentPage * itemsPerPage, filteredAppointments.length)} of{" "}
           {filteredAppointments.length}
         </Typography>
         <Box display="flex" gap={1}>
-          <Button
+          <DefaultButton
             variant="outlined"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
-            Prev
-          </Button>
-          <Button
+            <Typography variant="body2">Prev</Typography>
+          </DefaultButton>
+          <DefaultButton
             variant="outlined"
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
-            Next
-          </Button>
+            <Typography variant="body2">Next</Typography>
+          </DefaultButton>
         </Box>
-      </Box>
+      </PaginationBox>
       <Dialog
         open={!!selectedPrescription}
         onClose={() => setSelectedPrescription(null)}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>Prescription Details</DialogTitle>
+        <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>
+          Prescription Details
+        </DialogTitle>
         <DialogContent dividers>
           {selectedPrescription && (
             <>
@@ -361,28 +362,33 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
               </Typography>
               <Paper>
                 <Table size="small">
-                  <TableHead sx={styles.tableHead}>
-                    <TableRow sx={{
-                      "& .MuiTableCell-root": {
-                        py: 0.3,
-                        height: 24,
-                      },
-                    }}>
+                  <PatientTableHead>
+                    <TableRow
+                      sx={{
+                        "& .MuiTableCell-root": {
+                          py: 0.3,
+                          height: 24,
+                        },
+                      }}
+                    >
                       <TableCell>Name</TableCell>
                       <TableCell>Dosage</TableCell>
                       <TableCell>Frequency</TableCell>
                       <TableCell>Duration</TableCell>
                       <TableCell>Notes</TableCell>
                     </TableRow>
-                  </TableHead>
+                  </PatientTableHead>
                   <TableBody>
                     {selectedPrescription.medicines.map((m, i) => (
-                      <TableRow key={i} sx={{
-                      "& .MuiTableCell-root": {
-                        py: 1,
-                        height: 24,
-                      },
-                    }}>
+                      <TableRow
+                        key={i}
+                        sx={{
+                          "& .MuiTableCell-root": {
+                            py: 0.3,
+                            height: 24,
+                          },
+                        }}
+                      >
                         <TableCell>{m.name}</TableCell>
                         <TableCell>{m.dosage}</TableCell>
                         <TableCell>{m.frequency}</TableCell>
@@ -397,7 +403,9 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
           )}
         </DialogContent>
         <DialogActions>
-          <TypedButton btntype="delete" onClick={() => setSelectedPrescription(null)}>Close</TypedButton>
+          <DeleteButton onClick={() => setSelectedPrescription(null)}>
+            Close
+          </DeleteButton>
         </DialogActions>
       </Dialog>
       <Dialog
@@ -406,13 +414,19 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>Book Appointment</DialogTitle>
+        <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>
+          Book Appointment
+        </DialogTitle>
         <DialogContent dividers>
           <BookAppointment
             patientId={patientId}
             onSuccess={() => {
               setShowBooking(false);
-              fetch(`${import.meta.env.VITE_BACK_URL}/appointment/patient/${patientId}`)
+              fetch(
+                `${
+                  import.meta.env.VITE_BACK_URL
+                }/appointment/patient/${patientId}`
+              )
                 .then((r) => r.json())
                 .then((d) => setAppointments(d));
             }}
@@ -420,7 +434,7 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
           />
         </DialogContent>
       </Dialog>
-    </Box>
+    </PatientContainer>
   );
 };
 export default PatientAppointment;

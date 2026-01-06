@@ -2,14 +2,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
-  Button,
   Typography,
   IconButton,
   Collapse,
   Divider,
   Paper,
   Table,
-  TableHead,
   TableRow,
   TableCell,
   TableBody,
@@ -25,6 +23,7 @@ import {
   FormControl,
   useMediaQuery,
   Chip,
+  Button,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
@@ -32,10 +31,26 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
-import { useThemeContext } from "../../context/ThemeContext";
-import { getPatientStyles, TypedButton } from "../../themes/theme";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import {
+  AddButton,
+  AutoText,
+  CardActions,
+  CardContentBox,
+  CardHeaderBox,
+  DefaultButton,
+  DeleteButton,
+  FilterAutocomplete,
+  FilterWrapper,
+  PageTitle,
+  PaginationBox,
+  PatientCard,
+  PatientContainer,
+  PatientTableHead,
+  SaveButton,
+} from "../../components/styledcomp";
+import useDebounce from "../../components/Debounce";
 interface IPatient {
   _id?: string;
   fullName: string;
@@ -80,10 +95,6 @@ const Appointments: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<IPatient[]>([]);
   const [doctors, setDoctors] = useState<IDoctor[]>([]);
-  const [filterDate, setFilterDate] = useState<Dayjs | null>(null);
-  const [filterMode, setFilterMode] = useState<string | null>(null);
-  const [filterDoctor, setFilterDoctor] = useState("");
-  const [filterPatient, setFilterPatient] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -93,6 +104,12 @@ const Appointments: React.FC = () => {
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [availability, setAvailability] = useState<AvailableSlot[]>([]);
+  const [filter, setFilter] = useState({
+    patient: "",
+    doctor: "",
+    mode: "",
+    date: "",
+  });
   const [formData, setFormData] = useState({
     patient: "",
     doctor: "",
@@ -101,9 +118,9 @@ const Appointments: React.FC = () => {
     appointmentType: "Online" as "Online" | "In-person",
     consultationFee: 0,
   });
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  const { mode } = useThemeContext();
-  const styles = getPatientStyles(mode);
+  const isMobile = useMediaQuery("(max-width: 900px)");
+  const debouncedPatient = useDebounce(filter.patient, 400);
+  const debouncedDoctor = useDebounce(filter.doctor, 400);
   const validateForm = () => {
     const newErrors: FormErrors = {};
     if (!formData.patient) newErrors.patient = "Patient is required";
@@ -152,15 +169,21 @@ const Appointments: React.FC = () => {
     )?.times || [];
   const filteredAppointments = useMemo(() => {
     return appointments.filter((a) => {
-      const doctorMatch = !filterDoctor || a.doctor?._id === filterDoctor;
-      const patientMatch = !filterPatient || a.patient?._id === filterPatient;
+      const doctorMatch = !debouncedDoctor || a.doctor?._id === debouncedDoctor;
+      const patientMatch =
+        !debouncedPatient || a.patient?._id === debouncedPatient;
       const dateMatch =
-        !filterDate ||
-        dayjs(a.date).format("YYYY-MM-DD") === filterDate.format("YYYY-MM-DD");
-      const modeMatch = !filterMode || a.appointmentType === filterMode;
+        !filter.date || dayjs(a.date).format("YYYY-MM-DD") === filter.date;
+      const modeMatch = !filter.mode || a.appointmentType === filter.mode;
       return doctorMatch && patientMatch && dateMatch && modeMatch;
     });
-  }, [appointments, filterDoctor, filterPatient, filterDate, filterMode]);
+  }, [
+    appointments,
+    debouncedDoctor,
+    debouncedPatient,
+    filter.date,
+    filter.mode,
+  ]);
   const totalFiltered = filteredAppointments.length;
   const totalPages = Math.ceil(totalFiltered / itemsPerPage);
   const paginatedAppointments = useMemo(() => {
@@ -182,10 +205,7 @@ const Appointments: React.FC = () => {
     }
   };
   const handleClear = () => {
-    setFilterDate(null);
-    setFilterDoctor("");
-    setFilterPatient("");
-    setFilterMode("");
+    setFilter({ patient: "", doctor: "", date: "", mode: "" });
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,10 +235,8 @@ const Appointments: React.FC = () => {
   console.log(paginatedAppointments, "papapappapaapp");
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box sx={styles.container}>
-        <Typography variant="h5" sx={styles.title}>
-          Appointment
-        </Typography>
+      <PatientContainer>
+        <PageTitle variant="h5">Appointment</PageTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="h6">Filters</Typography>
@@ -226,73 +244,80 @@ const Appointments: React.FC = () => {
               {filterOpen ? <ExpandLess /> : <ExpandMore />}
             </IconButton>
           </Box>
-          <TypedButton onClick={() => setOpenDialog(true)}>
-            {" "}
+          <AddButton onClick={() => setOpenDialog(true)}>
             + New Appointment
-          </TypedButton>
+          </AddButton>
         </Box>
         <Collapse in={filterOpen} sx={{ py: 1 }}>
-          <Box sx={styles.filterBox}>
-            <Autocomplete
-              options={doctors}
-              getOptionLabel={(d) => d.fullName}
-              onChange={(_, v) => setFilterDoctor(v?._id || "")}
+          <FilterWrapper>
+            <FilterAutocomplete
+              options={[...new Set(doctors.map((p) => p.fullName))]}
+              value={filter.doctor}
+              onChange={(_, value) =>
+                setFilter((f) => ({ ...f, doctor: value || "" }))
+              }
               renderInput={(p) => (
-                <TextField {...p} label="Doctor" size="small" />
+                <AutoText {...p} label="Doctor" size="small" />
               )}
-              sx={styles.filterField}
             />
-            <Autocomplete
-              options={patients}
-              getOptionLabel={(p) => p.fullName}
-              onChange={(_, v) => setFilterPatient(v?._id || "")}
+            <FilterAutocomplete
+              options={[...new Set(patients.map((p) => p.fullName))]}
+              value={filter.patient}
+              onChange={(_, value) =>
+                setFilter((f) => ({ ...f, patient: value || "" }))
+              }
               renderInput={(p) => (
-                <TextField {...p} label="Patient" size="small" />
+                <AutoText {...p} label="Patient" size="small" />
               )}
-              sx={styles.filterField}
             />
             <DatePicker
               label="Select Date"
-              value={filterDate}
-              onChange={(d) => setFilterDate(d as Dayjs | null)}
+              value={filter.date ? dayjs(filter.date) : null}
+              onChange={(d) =>
+                setFilter((f) => ({
+                  ...f,
+                  date: d ? dayjs(d).format("YYYY-MM-DD") : "",
+                }))
+              }
               slotProps={{
                 textField: {
                   fullWidth: true,
                   size: "small",
                 },
               }}
-              sx={{ minWidth: { sm: 180 } }}
             />
-            <Autocomplete
+            <FilterAutocomplete
               options={["Online", "In-person"]}
-              value={filterMode}
-              onChange={(_, value) => setFilterMode(value)}
-              size="small"
-              sx={styles.filterField}
-              renderInput={(params) => <TextField {...params} label="Mode" />}
+              value={filter.mode || null}
+              onChange={(_, value) =>
+                setFilter((f) => ({ ...f, mode: value || "" }))
+              }
+              renderInput={(params) => (
+                <AutoText {...params} label="Mode" size="small" />
+              )}
             />
-            <TypedButton btntype="delete" size="small" onClick={handleClear}>
+            <DeleteButton
+              sx={{
+                mt: { xs: 0.5, md: 0 },
+                width: { xs: "100%", md: "auto" },
+              }}
+              size="small"
+              onClick={handleClear}
+            >
               CLEAR
-            </TypedButton>
-          </Box>
+            </DeleteButton>
+          </FilterWrapper>
         </Collapse>
         <Divider sx={{ mb: 2 }} />
         <Typography variant="subtitle1" mb={1}>
           Appointments ({totalFiltered})
         </Typography>
         {isMobile ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 1 }}>
+          <Box>
             {paginatedAppointments.length === 0 ? (
-              <Paper
-                sx={{
-                  p: 3,
-                  textAlign: "center",
-                  borderRadius: 2,
-                  backgroundColor: "background.paper",
-                }}
-              >
-                <Typography color="text.secondary">No appointments</Typography>
-              </Paper>
+              <Typography align="center" color="text.secondary" py={3}>
+                No Appointments found
+              </Typography>
             ) : (
               paginatedAppointments.map((a, i) => {
                 const serial = (currentPage - 1) * itemsPerPage + i + 1;
@@ -306,30 +331,29 @@ const Appointments: React.FC = () => {
                   Pending: "warning",
                 };
                 return (
-                  <Paper sx={styles.patientCard}>
-                    <Box sx={styles.cardHeader}>
+                  <PatientCard>
+                    <CardHeaderBox>
                       <Typography variant="subtitle2" color="text.secondary">
                         #{serial}
                       </Typography>
-                      <Box sx={styles.cardActions}>
-                        <IconButton
+                      <CardActions>
+                        <SaveButton
                           disabled={a.status === "Confirmed"}
                           onClick={() => updateStatus(a._id, "Confirmed")}
                           size="small"
                         >
                           <CheckCircleOutlineIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          color="error"
+                        </SaveButton>
+                        <DeleteButton
                           disabled={a.status === "Cancelled"}
                           onClick={() => updateStatus(a._id, "Cancelled")}
                           size="small"
                         >
                           <CancelIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </Box>
-                    <Box sx={styles.cardContent}>
+                        </DeleteButton>
+                      </CardActions>
+                    </CardHeaderBox>
+                    <CardContentBox>
                       <div>
                         <Typography variant="body2" color="text.secondary">
                           Patient
@@ -378,21 +402,29 @@ const Appointments: React.FC = () => {
                           {a.appointmentType || "—"}
                         </Typography>
                       </div>
-                    </Box>
-                  </Paper>
+                    </CardContentBox>
+                  </PatientCard>
                 );
               })
             )}
           </Box>
         ) : (
-          <Paper>
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 2,
+              overflow: "auto",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
             <Table>
-              <TableHead sx={styles.tableHead}>
+              <PatientTableHead>
                 <TableRow
                   sx={{
-                    "& .MuiTableCell-root": {
-                      py: 1,
-                      height: 24,
+                    backgroundColor: "action.hover",
+                    "& th": {
+                      fontWeight: 600,
                     },
                   }}
                 >
@@ -405,7 +437,7 @@ const Appointments: React.FC = () => {
                   <TableCell>Mode</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
-              </TableHead>
+              </PatientTableHead>
               <TableBody>
                 {paginatedAppointments.length ? (
                   paginatedAppointments.map((a, i) => (
@@ -430,19 +462,31 @@ const Appointments: React.FC = () => {
                       <TableCell>{a.status}</TableCell>
                       <TableCell>{a.appointmentType}</TableCell>
                       <TableCell>
-                        <IconButton
-                          disabled={a.status === "Confirmed"}
-                          onClick={() => updateStatus(a._id, "Confirmed")}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-around",
+                          }}
                         >
-                          <CheckCircleOutlineIcon />
-                        </IconButton>
-                        <IconButton
-                          color="error"
-                          disabled={a.status === "Cancelled"}
-                          onClick={() => updateStatus(a._id, "Cancelled")}
-                        >
-                          <CancelIcon />
-                        </IconButton>
+                          <Button
+                            color="success"
+                            sx={{ minWidth: 0 }}
+                            disabled={a.status === "Confirmed"}
+                            onClick={() => updateStatus(a._id, "Confirmed")}
+                            size="small"
+                          >
+                            <CheckCircleOutlineIcon />
+                          </Button>
+                          <Button
+                            color="error"
+                            sx={{ minWidth: 0 }}
+                            disabled={a.status === "Cancelled"}
+                            onClick={() => updateStatus(a._id, "Cancelled")}
+                            size="small"
+                          >
+                            <CancelIcon />
+                          </Button>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
@@ -457,27 +501,27 @@ const Appointments: React.FC = () => {
             </Table>
           </Paper>
         )}
-        <Box sx={styles.paginationBox}>
+        <PaginationBox>
           <Typography variant="body2">
             Showing {(currentPage - 1) * itemsPerPage + 1}-
             {Math.min(currentPage * itemsPerPage, totalFiltered)} of{" "}
             {totalFiltered}
           </Typography>
           <Box>
-            <Button
+            <DefaultButton
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(currentPage - 1)}
             >
-              Prev
-            </Button>
-            <Button
+              <Typography variant="body2">Prev</Typography>
+            </DefaultButton>
+            <DefaultButton
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(currentPage + 1)}
             >
-              Next
-            </Button>
+              <Typography variant="body2">Next</Typography>
+            </DefaultButton>
           </Box>
-        </Box>
+        </PaginationBox>
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
           <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>
             New Appointment
@@ -495,11 +539,11 @@ const Appointments: React.FC = () => {
                     {...params}
                     label="Select Patient"
                     margin="dense"
+                    size="small"
                     error={!!errors.patient}
                     helperText={errors.patient}
                   />
                 )}
-                sx={styles.filterField}
               />
               <Autocomplete
                 options={doctors}
@@ -524,6 +568,7 @@ const Appointments: React.FC = () => {
                     {...params}
                     label="Select Doctor"
                     margin="dense"
+                    size="small"
                     error={!!errors.doctor}
                     helperText={errors.doctor}
                   />
@@ -556,7 +601,7 @@ const Appointments: React.FC = () => {
                   <Grid container spacing={1}>
                     {timesForDay.map((t) => (
                       <Grid key={t}>
-                        <Button
+                        <DefaultButton
                           variant={
                             selectedTime === t ? "contained" : "outlined"
                           }
@@ -566,7 +611,7 @@ const Appointments: React.FC = () => {
                           }}
                         >
                           {t}
-                        </Button>
+                        </DefaultButton>
                       </Grid>
                     ))}
                   </Grid>
@@ -580,6 +625,7 @@ const Appointments: React.FC = () => {
               <FormControl fullWidth margin="dense" size="small">
                 <InputLabel>Consultation Mode</InputLabel>
                 <Select
+                  size="small"
                   value={formData.appointmentType}
                   label="Consultation Mode"
                   onChange={(e) => {
@@ -608,23 +654,25 @@ const Appointments: React.FC = () => {
               <TextField
                 label="Consultation Fee (₹)"
                 type="number"
+                size="small"
                 fullWidth
                 margin="dense"
                 value={formData.consultationFee}
                 disabled
               />
               <DialogActions sx={{ mt: 2 }}>
-                <Button color="error" onClick={() => setOpenDialog(false)}>
+                <DeleteButton
+                  color="error"
+                  onClick={() => setOpenDialog(false)}
+                >
                   Cancel
-                </Button>
-                <Button type="submit" variant="contained">
-                  Book
-                </Button>
+                </DeleteButton>
+                <SaveButton type="submit">Book</SaveButton>
               </DialogActions>
             </Box>
           </DialogContent>
         </Dialog>
-      </Box>
+      </PatientContainer>
     </LocalizationProvider>
   );
 };

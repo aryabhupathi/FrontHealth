@@ -3,10 +3,8 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
-  Button,
   TextField,
   Table,
-  TableHead,
   TableRow,
   TableCell,
   TableBody,
@@ -17,7 +15,6 @@ import {
   FormControlLabel,
   Paper,
   IconButton,
-  Autocomplete,
   Collapse,
   Divider,
   Grid,
@@ -27,6 +24,7 @@ import {
   MenuItem,
   type SelectChangeEvent,
   useMediaQuery,
+  Button,
 } from "@mui/material";
 import dayjs, { Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -37,12 +35,30 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { useThemeContext } from "../../context/ThemeContext";
-import { getPatientStyles, TypedButton } from "../../themes/theme";
 import useDebounce from "../../components/Debounce";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { ZodError } from "zod";
 import { FormAdminSchema } from "../../schemas/patient.schema";
+import {
+  AddButton,
+  AutoText,
+  CardActions,
+  CardContentBox,
+  CardHeaderBox,
+  CardTitle,
+  DefaultButton,
+  DeleteButton,
+  FilterAutocomplete,
+  FilterWrapper,
+  ModalActions,
+  PageTitle,
+  PaginationBox,
+  PatientCard,
+  PatientContainer,
+  PatientTableHead,
+  SaveButton,
+  UpdateButton,
+} from "../../components/styledcomp";
 interface IPatient {
   _id?: string;
   patientId?: string;
@@ -87,8 +103,6 @@ export default function PatientPage() {
     medications: [],
   };
   const [formData, setFormData] = useState<IPatient>(emptyForm);
-  const { mode } = useThemeContext();
-  const styles = getPatientStyles(mode);
   const isMobile = useMediaQuery("(max-width: 900px)");
   const debouncedName = useDebounce(filter.patientName, 400);
   const debouncedCondition = useDebounce(filter.condition, 400);
@@ -237,10 +251,8 @@ export default function PatientPage() {
     currentPage * patientsPerPage
   );
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h5" sx={styles.title}>
-        Patient
-      </Typography>
+    <PatientContainer>
+      <PageTitle variant="h5">Patient</PageTitle>
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center" gap={1}>
           <Typography variant="h6">Filters</Typography>
@@ -251,59 +263,55 @@ export default function PatientPage() {
             {filterOpen ? <ExpandLess /> : <ExpandMore />}
           </IconButton>
         </Box>
-        <TypedButton
-          btntype="primary"
-          onClick={() => setShowModal(true)}
-          size="small"
-        >
+        <AddButton onClick={() => setShowModal(true)} size="small">
           + Add Patient
-        </TypedButton>
+        </AddButton>
       </Box>
       <Collapse in={filterOpen} sx={{ py: 1 }}>
-        <Box sx={styles.filterBox}>
-          <Autocomplete
+        <FilterWrapper>
+          <FilterAutocomplete
             options={[...new Set(patients.map((p) => p.fullName))]}
             value={filter.patientName || ""}
             onChange={(_, value) =>
               setFilter((f) => ({ ...f, patientName: value || "" }))
             }
             renderInput={(params) => (
-              <TextField {...params} label="Patient Name" size="small" />
+              <AutoText {...params} label="Patient Name" size="small" />
             )}
-            sx={styles.filterField}
           />
-          <Autocomplete
+          <FilterAutocomplete
             options={[...new Set(patients.flatMap((p) => p.conditions || []))]}
             value={filter.condition || ""}
             onChange={(_, value) =>
               setFilter((f) => ({ ...f, condition: value || "" }))
             }
             renderInput={(params) => (
-              <TextField {...params} label="Condition" size="small" />
+              <AutoText {...params} label="Condition" size="small" />
             )}
-            sx={styles.filterField}
           />
-          <Autocomplete
+          <FilterAutocomplete
             options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]}
             value={filter.bloodGroup || ""}
             onChange={(_, value) =>
               setFilter((f) => ({ ...f, bloodGroup: value || "" }))
             }
             renderInput={(params) => (
-              <TextField {...params} label="Blood Group" size="small" />
+              <AutoText {...params} label="Blood Group" size="small" />
             )}
-            sx={styles.filterField}
           />
-          <TypedButton
-            btntype="delete"
+          <DeleteButton
+            sx={{
+              mt: { xs: 0.5, md: 0 },
+              width: { xs: "100%", md: "auto" },
+            }}
             size="small"
             onClick={() =>
               setFilter({ bloodGroup: "", condition: "", patientName: "" })
             }
           >
             Clear
-          </TypedButton>
-        </Box>
+          </DeleteButton>
+        </FilterWrapper>
       </Collapse>
       <Divider sx={{ mb: 2 }} />
       <Typography variant="subtitle1" mb={1}>
@@ -313,42 +321,25 @@ export default function PatientPage() {
         <Box>
           {paginatedPatients.length > 0 ? (
             paginatedPatients.map((p, i) => (
-              <Paper key={p._id || i} sx={styles.patientCard}>
-                <Box sx={styles.cardHeader}>
-                  <Typography
-                    variant="subtitle2"
-                    noWrap
-                    sx={{
-                      flex: 1,
-                      textAlign: "left",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontWeight: "medium",
-                    }}
-                  >
+              <PatientCard key={p._id || i}>
+                <CardHeaderBox>
+                  <CardTitle variant="subtitle2">
                     {(currentPage - 1) * patientsPerPage + i + 1}. {p.fullName}
-                  </Typography>
-                  <Box sx={styles.cardActions}>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleEdit(p)}
-                      aria-label="Edit patient"
-                    >
+                  </CardTitle>
+                  <CardActions>
+                    <Button size="small" onClick={() => handleEdit(p)}>
                       <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
+                    </Button>
+                    <Button
                       size="small"
                       color="error"
                       onClick={() => handleDelete(p._id)}
-                      aria-label="Delete patient"
                     >
                       <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </Box>
-                <Box sx={styles.cardContent}>
+                    </Button>
+                  </CardActions>
+                </CardHeaderBox>
+                <CardContentBox>
                   <div>
                     <strong>Blood Group:</strong> {p.bloodGroup}
                   </div>
@@ -359,8 +350,8 @@ export default function PatientPage() {
                     <strong>Conditions:</strong>{" "}
                     {p.conditions?.join(", ") || "—"}
                   </div>
-                </Box>
-              </Paper>
+                </CardContentBox>
+              </PatientCard>
             ))
           ) : (
             <Typography align="center" color="text.secondary" py={3}>
@@ -369,14 +360,22 @@ export default function PatientPage() {
           )}
         </Box>
       ) : (
-        <Paper>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            overflow: "auto",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
           <Table>
-            <TableHead sx={styles.tableHead}>
+            <PatientTableHead>
               <TableRow
                 sx={{
-                  "& .MuiTableCell-root": {
-                    py: 1,
-                    height: 24,
+                  backgroundColor: "action.hover",
+                  "& th": {
+                    fontWeight: 600,
                   },
                 }}
               >
@@ -388,7 +387,7 @@ export default function PatientPage() {
                 <TableCell>Conditions</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
-            </TableHead>
+            </PatientTableHead>
             <TableBody>
               {paginatedPatients.length > 0 ? (
                 paginatedPatients.map((p, i) => (
@@ -410,15 +409,26 @@ export default function PatientPage() {
                     <TableCell>{p.contact?.phone}</TableCell>
                     <TableCell>{p.conditions?.join(", ")}</TableCell>
                     <TableCell>
-                      <IconButton color="primary" onClick={() => handleEdit(p)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDelete(p._id)}
+                      <Box
+                        sx={{ display: "flex", justifyContent: "space-around" }}
                       >
-                        <DeleteIcon />
-                      </IconButton>
+                        <Button
+                          sx={{ minWidth: 0 }}
+                          color="primary"
+                          size="small"
+                          onClick={() => handleEdit(p)}
+                        >
+                          <EditIcon fontSize="small" />
+                        </Button>
+                        <Button
+                          sx={{ minWidth: 0 }}
+                          color="error"
+                          size="small"
+                          onClick={() => handleDelete(p._id)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))
@@ -433,27 +443,27 @@ export default function PatientPage() {
           </Table>
         </Paper>
       )}
-      <Box sx={styles.paginationBox}>
+      <PaginationBox>
         <Typography variant="body2">
           Showing {(currentPage - 1) * patientsPerPage + 1}–
           {Math.min(currentPage * patientsPerPage, filteredPatients.length)} of{" "}
           {filteredPatients.length}
         </Typography>
         <Box>
-          <Button
+          <DefaultButton
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
-            Prev
-          </Button>
-          <Button
+            <Typography variant="body2">Prev</Typography>
+          </DefaultButton>
+          <DefaultButton
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
-            Next
-          </Button>
+            <Typography variant="body2">Next</Typography>
+          </DefaultButton>
         </Box>
-      </Box>
+      </PaginationBox>
       <Dialog open={showModal} onClose={resetForm} fullWidth maxWidth="md">
         <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>
           {editingPatient ? "Edit Patient" : "Add New Patient"}
@@ -657,26 +667,27 @@ export default function PatientPage() {
               label="Create Login for Patient"
               sx={{ mt: 2 }}
             />
-            <Box sx={styles.modalActions}>
-              <TypedButton btntype="delete" onClick={resetForm} size="small">
+            <ModalActions>
+              <DeleteButton onClick={resetForm} size="small">
                 Cancel
-              </TypedButton>
-              <TypedButton
-                btntype="primary"
-                size="small"
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? "Saving..."
-                  : editingPatient
-                  ? "Update"
-                  : "Save"}
-              </TypedButton>
-            </Box>
+              </DeleteButton>
+              {isSubmitting ? (
+                <SaveButton size="small" type="submit" disabled={isSubmitting}>
+                  Saving...
+                </SaveButton>
+              ) : editingPatient ? (
+                <UpdateButton size="small" type="submit">
+                  Update
+                </UpdateButton>
+              ) : (
+                <SaveButton size="small" type="submit">
+                  Save
+                </SaveButton>
+              )}
+            </ModalActions>
           </Box>
         </DialogContent>
       </Dialog>
-    </Box>
+    </PatientContainer>
   );
 }
