@@ -10,6 +10,11 @@ import {
   Autocomplete,
   CardHeader,
   TextField,
+  Container,
+  IconButton,
+  ListItemButton,
+  ListItemIcon,
+  Drawer,
 } from "@mui/material";
 export const DeleteButton = styled(Button)(({ theme }) => ({
   color: theme.palette.error.main,
@@ -71,7 +76,7 @@ export const FilterWrapper = styled(Box)(({ theme }) => ({
   },
 }));
 export const FilterAutocomplete = styled(
-  Autocomplete<string, false, false, false>
+  Autocomplete<string, false, false, false>,
 )(({ theme }) => ({
   width: "100%",
   flex: "1 1 100%",
@@ -255,4 +260,167 @@ export const WarningTableHead = styled(TableHead)(({ theme }) => ({
 }));
 export const AutoText = styled(TextField)(() => ({
   margin: 0,
+}));
+export const HeroContainer = styled(Container)(({ theme }) => ({
+  position: "relative",
+  zIndex: 1,
+  paddingTop: theme.spacing(1),
+  paddingBottom: theme.spacing(1),
+}));
+export const GlassCardA = styled(Card)(({ theme }) => ({
+  position: "relative",
+  borderRadius: theme.spacing(3),
+  overflow: "hidden",
+  border: `1px solid ${theme.palette.glass.cardBorder}`,
+  background: theme.palette.glass.soft,
+  boxShadow: theme.palette.glass.cardShadow,
+  backdropFilter: "blur(18px)",
+}));
+export const Badge = styled(Box)(({ theme }) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: theme.spacing(1),
+  padding: theme.spacing(0.5, 1.5),
+  marginBottom: theme.spacing(2),
+  borderRadius: 999,
+  border: "1px solid rgba(148,163,184,0.5)",
+  backgroundColor: "rgba(15,23,42,0.65)",
+  backdropFilter: "blur(16px)",
+}));
+export const GlowBackground = styled(Box)(() => ({
+  position: "absolute",
+  inset: "12%",
+  borderRadius: 24,
+  background:
+    "radial-gradient(circle at 10% 0, rgba(56,189,248,0.4), transparent 60%)",
+  filter: "blur(26px)",
+}));
+export const ImageWrapper = styled("img")(({ theme }) => ({
+  width: "100%",
+  padding: theme.spacing(6),
+  objectFit: "contain",
+  background:
+    "radial-gradient(circle at top, rgba(59,130,246,0.15), transparent 65%)",
+}));
+export const LoginWrapper = styled(Box)(({ theme }) => ({
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  paddingLeft: theme.spacing(2),
+  paddingRight: theme.spacing(2),
+  paddingTop: theme.spacing(2),
+  paddingBottom: theme.spacing(2),
+  [theme.breakpoints.up("sm")]: {
+    paddingLeft: theme.spacing(4),
+    paddingRight: theme.spacing(4),
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+  },
+  backgroundImage: theme.palette.layout.authBg,
+  position: "relative",
+  overflow: "hidden",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    inset: "-40%",
+    background:
+      "conic-gradient(from 140deg at 20% 20%, rgba(59,130,246,0.35), transparent 40%, rgba(236,72,153,0.4), transparent 70%, rgba(56,189,248,0.35))",
+    opacity: 0.8,
+    filter: "blur(60px)",
+  },
+}));
+export const LoginCard = styled(Paper)(({ theme }) => ({
+  position: "relative",
+  width: "100%",
+  maxWidth: 420,
+  paddingLeft: theme.spacing(2.5),
+  paddingRight: theme.spacing(2.5),
+  paddingTop: theme.spacing(3),
+  paddingBottom: theme.spacing(3),
+  [theme.breakpoints.up("sm")]: {
+    paddingLeft: theme.spacing(4),
+    paddingRight: theme.spacing(4),
+  },
+  borderRadius: theme.spacing(3),
+  backdropFilter: "blur(20px)",
+}));
+export const MobileToggleButton = styled(IconButton)(({ theme }) => ({
+  // position: "fixed",
+  // top: 16,
+  // left: 16,
+  zIndex: theme.zIndex.drawer + 1,
+  borderRadius: 999,
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? "rgba(15,23,42,0.9)"
+      : "rgba(248,250,252,0.95)",
+  boxShadow: "0 10px 30px rgba(15,23,42,0.55)",
+}));
+export const SidebarDrawer = styled(Drawer)<{ open: boolean }>(
+  ({ theme, open }) => ({
+    width: open ? 240 : 72,
+    flexShrink: 0,
+    "& .MuiDrawer-paper": {
+      width: open ? 240 : 72,
+      border: "none",
+      overflowX: "hidden",
+      transition: "width 0.25s ease-out",
+      background: theme.palette.glass.soft,
+      borderRight: `1px solid ${theme.palette.glass.cardBorder}`,
+      boxShadow: theme.palette.glass.cardShadow,
+      backdropFilter: "blur(22px)",
+      color: theme.palette.text.primary,
+    },
+  }),
+);
+export const SidebarHeader = styled(Box)<{ open: boolean }>(
+  ({ theme, open }) => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: open ? "space-between" : "center",
+    padding: open ? theme.spacing(2) : theme.spacing(1),
+    borderBottom: `1px solid ${theme.palette.glass.cardBorder}`,
+    minHeight: 64,
+  }),
+);
+export const SidebarListButton = styled(ListItemButton)<{ open: boolean }>(
+  ({ theme, open }) => ({
+    padding: open ? theme.spacing(1.5, 2) : theme.spacing(1),
+    borderRadius: 999,
+    margin: open ? theme.spacing(0.5, 1) : theme.spacing(0.5),
+    minHeight: 44,
+    justifyContent: open ? "flex-start" : "center",
+    "&.active": {
+      backgroundColor:
+        theme.palette.mode === "dark"
+          ? "rgba(129,140,248,0.22)"
+          : "rgba(191,219,254,0.9)",
+      color:
+        theme.palette.mode === "dark"
+          ? theme.palette.primary.light
+          : theme.palette.primary.main,
+    },
+    "&:hover": {
+      backgroundColor:
+        theme.palette.mode === "dark"
+          ? "rgba(148,163,184,0.18)"
+          : "rgba(226,232,240,0.9)",
+    },
+  }),
+);
+export const SidebarListIcon = styled(ListItemIcon)<{ open: boolean }>(
+  ({ theme, open }) => ({
+    minWidth: 0,
+    marginRight: open ? theme.spacing(1.5) : 0,
+    justifyContent: "center",
+    color: theme.palette.text.secondary,
+  }),
+);
+export const Overlay = styled(Box)(({ theme }) => ({
+  position: "fixed",
+  inset: 0,
+  backgroundColor: "rgba(15,23,42,0.6)",
+  backdropFilter: "blur(4px)",
+  zIndex: theme.zIndex.drawer - 1,
 }));

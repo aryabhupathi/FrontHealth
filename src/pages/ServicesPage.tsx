@@ -84,7 +84,7 @@ const ServicesPage: React.FC = () => {
     <MainLayout>
       <Box
         sx={(t) => ({
-          py: { xs: 8, md: 10 },
+          py: { xs: 4, md: 5 },
           textAlign: "center",
           position: "relative",
           overflow: "hidden",
@@ -102,7 +102,7 @@ const ServicesPage: React.FC = () => {
       >
         <Container sx={{ position: "relative", zIndex: 1 }}>
           <Typography
-            variant="overline"
+            variant="body1"
             color="primary.main"
             sx={{ letterSpacing: 1.2 }}
           >
@@ -129,7 +129,7 @@ const ServicesPage: React.FC = () => {
           </Typography>
         </Container>
       </Box>
-      <Box sx={{ py: 8 }}>
+      <Box sx={{ py: 2 }}>
         <Container>
           <Grid container spacing={4}>
             {services.map((service, idx) => {
@@ -139,7 +139,7 @@ const ServicesPage: React.FC = () => {
                   <Card
                     sx={{
                       height: "100%",
-                      borderRadius: 4,
+                      borderRadius: 2,
                       textAlign: "center",
                       background: theme.palette.glass.soft,
                       border: `1px solid ${theme.palette.glass.cardBorder}`,
@@ -155,15 +155,15 @@ const ServicesPage: React.FC = () => {
                       },
                     }}
                   >
-                    <CardContent sx={{ p: 4 }}>
+                    <CardContent sx={{ p: 2 }}>
                       <Box
                         mb={2}
                         sx={{
                           display: "inline-flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          width: 64,
-                          height: 64,
+                          width: 60,
+                          height: 60,
                           borderRadius: "50%",
                           backgroundColor:
                             theme.palette.mode === "dark"
@@ -194,7 +194,7 @@ const ServicesPage: React.FC = () => {
       </Box>
       <Box
         sx={(t) => ({
-          py: 8,
+          py: 4,
           textAlign: "center",
           color: t.palette.text.primary,
           background: t.palette.gradient.primary,
@@ -210,10 +210,11 @@ const ServicesPage: React.FC = () => {
           <Button
             variant="contained"
             color="secondary"
+            size="small"
             sx={{
               borderRadius: 999,
               px: 4,
-              py: 1.5,
+              py: 1,
               fontWeight: "bold",
             }}
           >
@@ -223,7 +224,7 @@ const ServicesPage: React.FC = () => {
       </Box>
       <Box
         sx={{
-          py: 4,
+          py: 2,
           textAlign: "center",
           background:
             theme.palette.mode === "light"

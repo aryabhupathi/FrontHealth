@@ -42,16 +42,15 @@ export default function MainLayout({
   const Brand = (
     <Typography
       variant="h5"
+      onClick={() => navigate("/")}
       sx={{
         fontWeight: 800,
         cursor: "pointer",
         letterSpacing: 1,
         display: "flex",
         alignItems: "center",
-        gap: 0.5,
-        color: theme.palette.text.primary,
+        userSelect: "none",
       }}
-      onClick={() => navigate("/")}
     >
       <Box component="span" sx={{ color: theme.palette.primary.light }}>
         HOS
@@ -67,11 +66,19 @@ export default function MainLayout({
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
+        overflow: "auto",
         backgroundImage: theme.palette.layout.authBg,
       }}
     >
-      <AppBar enableColorOnDark>
-        <Toolbar>
+      <AppBar position="sticky" enableColorOnDark>
+        <Toolbar
+          sx={{
+            minHeight: 72,
+            px: { xs: 2, md: 4 },
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
           {Brand}
           {!isMobile ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -82,24 +89,25 @@ export default function MainLayout({
                     key={item}
                     onClick={() => handleNavClick(item)}
                     color="inherit"
-                    variant="text"
                     sx={{
                       position: "relative",
+                      px: 1.5,
+                      fontWeight: 500,
                       ...(selected && {
                         color: theme.palette.primary.light,
                       }),
                       "&::after": {
                         content: '""',
                         position: "absolute",
-                        left: "16%",
-                        right: "16%",
-                        bottom: 2,
+                        left: "20%",
+                        right: "20%",
+                        bottom: 4,
                         height: 2,
                         borderRadius: 999,
                         background: selected
                           ? theme.palette.gradient.primary
                           : "transparent",
-                        transition: "background 0.25s ease-out",
+                        transition: "background 0.25s ease",
                       },
                       "&:hover::after": {
                         background: theme.palette.gradient.primary,
@@ -114,29 +122,24 @@ export default function MainLayout({
                 variant="contained"
                 color="secondary"
                 onClick={() => navigate("/login")}
-                sx={{ borderRadius: 999, px: 3, py: 0.75 }}
+                sx={{
+                  borderRadius: 999,
+                  px: 3,
+                  py: 0.75,
+                }}
               >
                 Login
               </Button>
-              <IconButton
-                onClick={toggleTheme}
-                aria-label="Toggle light/dark mode"
-              >
+              <IconButton onClick={toggleTheme}>
                 {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
             </Box>
           ) : (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <IconButton
-                onClick={toggleTheme}
-                aria-label="Toggle light/dark mode"
-              >
+              <IconButton onClick={toggleTheme}>
                 {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
-              <IconButton
-                onClick={() => setDrawerOpen(true)}
-                aria-label="Open navigation"
-              >
+              <IconButton onClick={() => setDrawerOpen(true)}>
                 <Menu />
               </IconButton>
             </Box>
@@ -150,20 +153,20 @@ export default function MainLayout({
         PaperProps={{
           sx: {
             width: 260,
-            p: 2.5,
+            p: 3,
             display: "flex",
             flexDirection: "column",
             gap: 2,
           },
         }}
       >
-        <Box sx={{ mb: 1 }}>{Brand}</Box>
+        <Box sx={{ mb: 2 }}>{Brand}</Box>
         <List sx={{ flexGrow: 1 }}>
           {navItems.map((item) => (
             <ListItemButton
               key={item}
-              onClick={() => handleNavClick(item)}
               selected={active === item}
+              onClick={() => handleNavClick(item)}
             >
               <ListItemText primary={item} />
             </ListItemButton>

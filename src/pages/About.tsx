@@ -66,7 +66,7 @@ const About: React.FC = () => {
     <MainLayout>
       <Box
         sx={(t) => ({
-          py: { xs: 8, md: 10 },
+          py: { xs: 4, md: 5 },
           textAlign: "center",
           position: "relative",
           overflow: "hidden",
@@ -84,7 +84,7 @@ const About: React.FC = () => {
       >
         <Container sx={{ position: "relative", zIndex: 1 }}>
           <Typography
-            variant="overline"
+            variant="body1"
             sx={{ letterSpacing: 1.2 }}
             color="primary.main"
           >
@@ -112,7 +112,7 @@ const About: React.FC = () => {
           </Typography>
         </Container>
       </Box>
-      <Box sx={{ py: 8 }}>
+      <Box sx={{ py: 4 }}>
         <Container>
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -180,7 +180,7 @@ const About: React.FC = () => {
       </Box>
       <Box
         sx={{
-          py: 8,
+          py: 4,
           background:
             theme.palette.mode === "light"
               ? "linear-gradient(180deg, #f8fafc, #e5edff)"
@@ -248,7 +248,7 @@ const About: React.FC = () => {
           </Grid>
         </Container>
       </Box>
-      <Box sx={{ py: 8 }}>
+      <Box sx={{ py: 4 }}>
         <Container>
           <Typography
             variant="overline"
@@ -307,7 +307,7 @@ const About: React.FC = () => {
       </Box>
       <Box
         sx={{
-          py: 8,
+          py: 4,
           textAlign: "center",
           background:
             theme.palette.mode === "light"
@@ -344,7 +344,7 @@ const About: React.FC = () => {
       </Box>
       <Box
         sx={(t) => ({
-          py: 8,
+          py: 4,
           textAlign: "center",
           color: t.palette.text.primary,
           background: t.palette.gradient.primary,
@@ -360,10 +360,11 @@ const About: React.FC = () => {
           <Button
             variant="contained"
             color="secondary"
+            size="small"
             sx={{
               borderRadius: 999,
               px: 4,
-              py: 1.5,
+              py: 1,
               fontWeight: "bold",
             }}
             onClick={() => navigate("/login")}

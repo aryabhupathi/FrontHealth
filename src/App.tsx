@@ -2,7 +2,7 @@
   import LandingPage from "./pages/LandingPage";
   import { Navigate, Route, Routes } from "react-router-dom";
   import ServicesPage from "./pages/ServicesPage";
-  import Login from "./pages/Login";
+  import Login from "./pages/Login/Login";
   import AdminLayout from "./layout/AdminLayout";
   import AdminDashboard from "./pages/Dashboard/AdminDashboard";
   import PatientPage from "./pages/Admin/Patient";
@@ -16,17 +16,23 @@
   import PatientDashboard from "./pages/Dashboard/PatientDashboard";
   import PatientDoctors from "./pages/Patient/PatientDoctors";
   import PatientTests from "./pages/Patient/PatientTests";
-import Test from "./pages/Admin/Test";
+  import Test from "./pages/Admin/Test";
+  import ForgotPassword from "./pages/Login/Forgot";
+import ResetPassword from "./pages/Login/Reset";
   export default function App() {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const patientId = user?.role === "Patient" ? user?.linkedProfile?._id : null;
     const doctorId = user?.role === "Doctor" ? user?.linkedProfile?._id : null;
+
+    console.log(patientId, "kkkkkkkkkkkkkkkk")
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/admin/*" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />

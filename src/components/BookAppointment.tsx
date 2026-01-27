@@ -57,6 +57,8 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
     () => doctors.find((doc) => doc._id === selectedDoctor),
     [doctors, selectedDoctor]
   );
+
+  console.log(patientId, "llllllllllll")
   const availableDates = useMemo(() => {
     if (!selectedDoctorData?.workingHours) return [];
     const workingDays = selectedDoctorData.workingHours.map((wh) => wh.day);

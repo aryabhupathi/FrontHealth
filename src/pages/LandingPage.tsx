@@ -17,6 +17,12 @@ import {
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import MainLayout from "../layout/MainLayout";
 import { useNavigate } from "react-router-dom";
+import {
+  Badge,
+  GlassCardA,
+  GlowBackground,
+  HeroContainer,
+} from "../components/styledcomp";
 const AVATARS = {
   doctorMan: "https://cdn-icons-png.flaticon.com/512/3774/3774298.png",
   doctorWoman: "https://cdn-icons-png.flaticon.com/512/4140/4140048.png",
@@ -50,15 +56,15 @@ const LandingPage: React.FC = () => {
     <MainLayout>
       <Box
         sx={(t) => ({
-          pt: { xs: 8, md: 10 },
-          pb: { xs: 8, md: 10 },
+          pt: { xs: 5, md: 5 },
+          pb: { xs: 5, md: 5 },
           position: "relative",
           overflow: "hidden",
           backgroundImage: t.palette.layout.authBg,
           "&::before": {
             content: '""',
             position: "absolute",
-            inset: "-30%",
+            inset: "-50%",
             background:
               "conic-gradient(from 150deg at 10% 0%, rgba(59,130,246,0.3), transparent 40%, rgba(236,72,153,0.32), transparent 70%, rgba(56,189,248,0.3))",
             opacity: 0.9,
@@ -66,23 +72,10 @@ const LandingPage: React.FC = () => {
           },
         })}
       >
-        <Container sx={{ position: "relative", zIndex: 1 }}>
-          <Grid container spacing={6} alignItems="center">
+        <HeroContainer>
+          <Grid container spacing={8} alignItems="center">
             <Grid size={{ xs: 12, md: 6 }}>
-              <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  px: 1.5,
-                  py: 0.6,
-                  mb: 2,
-                  borderRadius: 999,
-                  border: "1px solid rgba(148,163,184,0.5)",
-                  backgroundColor: "rgba(15,23,42,0.65)",
-                  backdropFilter: "blur(16px)",
-                  gap: 1,
-                }}
-              >
+              <Badge>
                 <Box
                   sx={{
                     width: 8,
@@ -94,53 +87,32 @@ const LandingPage: React.FC = () => {
                 />
                 <Typography
                   variant="caption"
-                  sx={{
-                    letterSpacing: 0.8,
-                    textTransform: "uppercase"
-                  }}
+                  sx={{ letterSpacing: 0.8, color: "#fff" }}
                 >
-                  Smart, patient‑first care
+                  Smart, patient-first care
                 </Typography>
-              </Box>
-              <Typography
-                variant="h3"
-                sx={{
-                  fontWeight: 800,
-                  letterSpacing: 0.2,
-                  mb: 1.5,
-                  color: theme.palette.text.primary,
-                }}
-              >
+              </Badge>
+              <Typography variant="h3" fontWeight={800} mb={2}>
                 We care about your{" "}
-                <Box
-                  component="span"
-                  sx={{ color: theme.palette.primary.main }}
-                >
-                  health
+                <Box component="span" color="primary.main">
+                  HEALTH
                 </Box>
                 .
               </Typography>
               <Typography
                 variant="h6"
                 color="text.secondary"
-                sx={{ mb: 3, maxWidth: 520 }}
+                mb={3}
+                maxWidth={520}
               >
                 Consult top doctors from anywhere. Fast, secure, and tailored
                 care for every patient journey.
               </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 2,
-                  alignItems: "center",
-                }}
-              >
+              <Box display="flex" gap={2} flexWrap="wrap">
                 <Button
                   variant="contained"
                   color="secondary"
-                  size="large"
-                  sx={{ px: 3.5, py: 1.2 }}
+                  size="small"
                   onClick={handleView}
                 >
                   Book consultation
@@ -148,35 +120,21 @@ const LandingPage: React.FC = () => {
                 <Button
                   variant="text"
                   color="inherit"
-                  size="large"
-                  sx={{ px: 2.5 }}
+                  size="small"
                   onClick={() => navigate("/services")}
                 >
                   View services
                 </Button>
               </Box>
-              <Box
-                sx={{
-                  mt: 4,
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 3,
-                  fontSize: 13,
-                  color: "text.secondary",
-                }}
-              >
+              <Box mt={5} display="flex" gap={4} flexWrap="wrap">
                 <Box>
-                  <Typography variant="subtitle2" color="text.primary">
-                    24/7 doctors
-                  </Typography>
+                  <Typography variant="subtitle2">24/7 doctors</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    On‑call experts across specialties.
+                    On-call experts across specialties.
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="subtitle2" color="text.primary">
-                    4.9 patient score
-                  </Typography>
+                  <Typography variant="subtitle2">4.9 patient score</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Thousands of trusted reviews.
                   </Typography>
@@ -184,34 +142,9 @@ const LandingPage: React.FC = () => {
               </Box>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <Box
-                sx={{
-                  position: "relative",
-                  maxWidth: 460,
-                  mx: { xs: "auto", md: "unset" },
-                }}
-              >
-                <Box
-                  sx={{
-                    position: "absolute",
-                    inset: "12%",
-                    borderRadius: 6,
-                    background:
-                      "radial-gradient(circle at 10% 0, rgba(56,189,248,0.4), transparent 60%)",
-                    filter: "blur(26px)",
-                  }}
-                />
-                <Card
-                  sx={{
-                    position: "relative",
-                    borderRadius: 4,
-                    overflow: "hidden",
-                    border: `1px solid ${theme.palette.glass.cardBorder}`,
-                    background: theme.palette.glass.soft,
-                    boxShadow: theme.palette.glass.cardShadow,
-                    backdropFilter: "blur(18px)",
-                  }}
-                >
+              <Box position="relative" maxWidth={400} mx="auto">
+                <GlowBackground />
+                <GlassCardA>
                   <Box
                     component="img"
                     src={AVATARS.doctorMan}
@@ -224,45 +157,41 @@ const LandingPage: React.FC = () => {
                       objectFit: "contain",
                       background:
                         "radial-gradient(circle at top, rgba(59,130,246,0.15), transparent 65%)",
-                      p: 4,
+                      p: 6,
                     }}
                   />
-                  <CardContent
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      pt: 1,
-                    }}
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    px={3}
+                    pb={3}
                   >
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">
                         Next available
                       </Typography>
-                      <Typography variant="h6" color="text.primary">
-                        Today, 4:30 PM
-                      </Typography>
+                      <Typography variant="h6">Today, 4:30 PM</Typography>
                     </Box>
                     <Button
                       variant="contained"
-                      color="primary"
                       size="small"
-                      sx={{ borderRadius: 999, px: 2.5 }}
+                      sx={{ borderRadius: 999 }}
                       onClick={handleView}
                     >
                       Check slots
                     </Button>
-                  </CardContent>
-                </Card>
+                  </Box>
+                </GlassCardA>
               </Box>
             </Grid>
           </Grid>
-        </Container>
+        </HeroContainer>
       </Box>
-      <Box sx={{ py: 8, textAlign: "center" }}>
+      <Box sx={{ py: 4, textAlign: "center" }}>
         <Container>
           <Typography
-            variant="overline"
+            variant="body1"
             color="primary.main"
             sx={{ letterSpacing: 1 }}
           >
@@ -279,7 +208,7 @@ const LandingPage: React.FC = () => {
             From booking to recovery, every step is orchestrated around your
             comfort.
           </Typography>
-          <Grid container spacing={3}>
+          <Grid container spacing={4}>
             {[
               { icon: "📅", title: "Book", desc: "Easy online scheduling" },
               { icon: "❤️", title: "Consult", desc: "Expert doctors" },
@@ -289,20 +218,20 @@ const LandingPage: React.FC = () => {
               <Grid size={{ xs: 6, md: 3 }} key={idx}>
                 <Card
                   sx={{
-                    borderRadius: 4,
+                    borderRadius: 2,
                     height: "100%",
                     background: theme.palette.glass.soft,
                     border: `1px solid ${theme.palette.glass.cardBorder}`,
                     boxShadow: theme.palette.glass.cardShadow,
                     backdropFilter: "blur(18px)",
-                    py: 3,
+                    py: 1,
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h3" sx={{ mb: 1.5 }}>
+                    <Typography variant="h3" sx={{ mb: 1 }}>
                       {item.icon}
                     </Typography>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
+                    <Typography variant="h6" fontWeight={600}>
                       {item.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -315,13 +244,13 @@ const LandingPage: React.FC = () => {
           </Grid>
         </Container>
       </Box>
-      <Box sx={{ py: 8 }}>
+      <Box sx={{ py: 5 }}>
         <Container>
           <Grid container spacing={5} alignItems="center">
             <Grid size={{ xs: 12, md: 6 }}>
               <Card
                 sx={{
-                  borderRadius: 4,
+                  borderRadius: 2,
                   border: `1px solid ${theme.palette.glass.cardBorder}`,
                   background: theme.palette.glass.soft,
                   boxShadow: theme.palette.glass.cardShadow,
@@ -340,7 +269,7 @@ const LandingPage: React.FC = () => {
                     objectFit: "contain",
                     background:
                       "radial-gradient(circle at top, rgba(248,250,252,0.04), transparent 65%)",
-                    p: 4,
+                    p: 2,
                   }}
                 />
               </Card>
@@ -368,6 +297,7 @@ const LandingPage: React.FC = () => {
               <Button
                 variant="contained"
                 color="primary"
+                size="small"
                 sx={{ borderRadius: 999, px: 3, py: 1 }}
                 onClick={handleView}
               >
@@ -380,13 +310,13 @@ const LandingPage: React.FC = () => {
       <Box sx={{ py: 8, textAlign: "center" }}>
         <Container>
           <Typography
-            variant="overline"
+            variant="body1"
             color="primary.main"
             sx={{ letterSpacing: 1 }}
           >
             Our doctors
           </Typography>
-          <Typography variant="h4" fontWeight={700} mb={1.5}>
+          <Typography variant="h4" fontWeight={700} mb={1}>
             Trusted specialists
           </Typography>
           <Typography
@@ -406,7 +336,7 @@ const LandingPage: React.FC = () => {
               <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
                 <Card
                   sx={{
-                    borderRadius: 4,
+                    borderRadius: 2,
                     height: "100%",
                     border: `1px solid ${theme.palette.glass.cardBorder}`,
                     background: theme.palette.glass.soft,
@@ -416,7 +346,7 @@ const LandingPage: React.FC = () => {
                 >
                   <CardMedia
                     component="img"
-                    height="200"
+                    height="250"
                     image={AVATARS.fallback}
                     alt={doc.name}
                     sx={{ objectFit: "cover" }}
@@ -435,10 +365,10 @@ const LandingPage: React.FC = () => {
           </Grid>
         </Container>
       </Box>
-      <Box sx={{ py: 8 }}>
+      <Box sx={{ py: 4 }}>
         <Container>
           <Typography
-            variant="overline"
+            variant="body1"
             color="primary.main"
             textAlign="center"
             display="block"
@@ -446,7 +376,7 @@ const LandingPage: React.FC = () => {
           >
             Testimonials
           </Typography>
-          <Typography variant="h4" fontWeight={700} mb={1.5} textAlign="center">
+          <Typography variant="h4" fontWeight={700} mb={1} textAlign="center">
             What patients say
           </Typography>
           <Typography
@@ -517,8 +447,9 @@ const LandingPage: React.FC = () => {
           <Button
             variant="contained"
             color="secondary"
-            sx={{ borderRadius: 999, px: 4, py: 1.5, fontWeight: 600 }}
+            sx={{ borderRadius: 999, px: 4, py: 1, fontWeight: 600 }}
             onClick={handleView}
+            size="small"
           >
             Book a consultation
           </Button>
@@ -564,17 +495,36 @@ const LandingPage: React.FC = () => {
                 component="form"
                 sx={{
                   display: "flex",
+                  alignItems: "center",
                   gap: 1,
-                  flexDirection: { xs: "column", sm: "row" },
+                  width: "100%",
                 }}
               >
                 <TextField
-                  size="small"
-                  fullWidth
                   type="email"
                   placeholder="Your email"
+                  size="small"
+                  fullWidth
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      height: 44,
+                      borderRadius: 999,
+                    },
+                  }}
                 />
-                <Button variant="contained">Subscribe</Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  sx={{
+                    height: 44,
+                    px: 3,
+                    borderRadius: 999,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                >
+                  Subscribe
+                </Button>
               </Box>
             </Grid>
           </Grid>
