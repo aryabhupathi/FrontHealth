@@ -345,17 +345,26 @@ export const LoginCard = styled(Paper)(({ theme }) => ({
   borderRadius: theme.spacing(3),
   backdropFilter: "blur(20px)",
 }));
+export const MobileBox = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(2),
+  position: "fixed",
+  top: 16,
+  left: 16,
+  border:"2px solid red",
+  zIndex: theme.zIndex.drawer + 1,
+}));
 export const MobileToggleButton = styled(IconButton)(({ theme }) => ({
   // position: "fixed",
   // top: 16,
   // left: 16,
-  zIndex: theme.zIndex.drawer + 1,
   borderRadius: 999,
-  backgroundColor:
-    theme.palette.mode === "dark"
-      ? "rgba(15,23,42,0.9)"
-      : "rgba(248,250,252,0.95)",
-  boxShadow: "0 10px 30px rgba(15,23,42,0.55)",
+  // backgroundColor:
+  //   theme.palette.mode === "dark"
+  //     ? "rgba(15,23,42,0.9)"
+  //     : "rgba(248,250,252,0.95)",
+  // boxShadow: "0 10px 30px rgba(15,23,42,0.55)",
 }));
 export const SidebarDrawer = styled(Drawer)<{ open: boolean }>(
   ({ theme, open }) => ({

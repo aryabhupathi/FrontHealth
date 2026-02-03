@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useState, useEffect, useMemo, type FormEvent } from "react";
 import {
   TextField,
@@ -58,7 +58,6 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
     [doctors, selectedDoctor]
   );
 
-  console.log(patientId, "llllllllllll")
   const availableDates = useMemo(() => {
     if (!selectedDoctorData?.workingHours) return [];
     const workingDays = selectedDoctorData.workingHours.map((wh) => wh.day);
@@ -74,7 +73,6 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
     }
     return dates;
   }, [selectedDoctorData]);
-  console.log(availableDates, "aaaaaaaaaaaaaaa")
   const availableTimeSlots = useMemo(() => {
     if (!date || !selectedDoctorData?.workingHours) return [];
     const dayName = getDayName(date);

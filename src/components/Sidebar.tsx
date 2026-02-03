@@ -25,6 +25,7 @@ import { useAuth } from "../context/AuthContext";
 import { useThemeContext } from "../context/ThemeContext";
 import {
   DeleteButton,
+  MobileBox,
   MobileToggleButton,
   Overlay,
   SidebarDrawer,
@@ -123,13 +124,20 @@ export default function Sidebar({
               icon: <BsFillHospitalFill />,
               path: `${basePath}/tests`,
             },
+            {
+              label: "History",
+              icon: <BsFillHospitalFill />,
+              path: `${basePath}/history  `,
+            },
           ];
   return (
     <>
       {isMobile && !open && (
+        <MobileBox>
         <MobileToggleButton onClick={onToggle}>
           <FaAlignLeft />
         </MobileToggleButton>
+        </MobileBox>
       )}
       <SidebarDrawer
         variant={isMobile ? "temporary" : "permanent"}

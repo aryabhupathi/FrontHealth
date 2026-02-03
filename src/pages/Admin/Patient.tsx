@@ -112,7 +112,7 @@ export default function PatientPage() {
   const fetchPatients = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_BACK_URL}/patient`);
-      console.log(res, "lllllllllllllllllllllll");
+      
       const data = await res.json();
       setPatients(
         (data.data || []).map((p: any) => ({
@@ -140,13 +140,11 @@ export default function PatientPage() {
   };
   const validateForm = () => {
     try {
-      console.log("aaaaaaaaaaaaaaaaaa");
       FormAdminSchema.parse({
         ...formData,
         dob: formData.dob ? formData.dob.toDate() : null,
       });
       setErrors({});
-      console.log(errors, "wwwwwwwwwwwww");
       return true;
     } catch (err) {
       const fieldErrors: Record<string, string> = {};

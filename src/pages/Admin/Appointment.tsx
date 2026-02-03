@@ -69,7 +69,13 @@ interface IDoctor {
     inPerson?: number;
   };
 }
-type AppointmentStatus = "Pending" | "Confirmed" | "Cancelled";
+type AppointmentStatus =
+  | "Pending"
+  | "Confirmed"
+  | "Rescheduled"
+  | "Cancelled"
+  | "Completed";
+
 type FormErrors = {
   patient?: string;
   doctor?: string;
@@ -118,6 +124,11 @@ const Appointments: React.FC = () => {
     appointmentType: "Online" as "Online" | "In-person",
     consultationFee: 0,
   });
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+const [rescheduleAppt, setRescheduleAppt] = useState<Appointment | null>(null);
+const [rescheduleDate, setRescheduleDate] = useState<Dayjs | null>(null);
+const [rescheduleTime, setRescheduleTime] = useState("");
+
   const isMobile = useMediaQuery("(max-width: 900px)");
   const debouncedPatient = useDebounce(filter.patient, 400);
   const debouncedDoctor = useDebounce(filter.doctor, 400);
@@ -132,6 +143,57 @@ const Appointments: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  const openReschedule = (appt: Appointment) => {
+  setRescheduleAppt(appt);
+  setSelectedDoctor(appt.doctor);
+  setRescheduleDate(null);
+  setRescheduleTime("");
+  setRescheduleOpen(true);
+
+  if (appt.doctor?._id) {
+    fetchAvailability(appt.doctor._id);
+  }
+};
+
+const handleAdminReschedule = async () => {
+  if (!rescheduleAppt || !rescheduleDate || !rescheduleTime) return;
+
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACK_URL}/appointment/reschedule/${rescheduleAppt._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: dayjs(rescheduleDate).format("YYYY-MM-DD"),
+          time: rescheduleTime,
+          status: "Rescheduled",
+          rescheduledBy: "admin", // backend can infer from auth
+        }),
+      }
+    );
+
+    if (!res.ok) throw new Error("Failed to reschedule");
+
+    setAppointments((prev) =>
+      prev.map((a) =>
+        a._id === rescheduleAppt._id
+          ? {
+              ...a,
+              date: dayjs(rescheduleDate).toISOString(),
+              time: rescheduleTime,
+              status: "Rescheduled",
+            }
+          : a
+      )
+    );
+
+    setRescheduleOpen(false);
+  } catch (err) {
+    alert("Reschedule failed");
+  }
+};
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -338,19 +400,29 @@ const Appointments: React.FC = () => {
                       </Typography>
                       <CardActions>
                         <SaveButton
-                          disabled={a.status === "Confirmed"}
+                          disabled={a.status === "Confirmed" || a.status === "Completed"}
                           onClick={() => updateStatus(a._id, "Confirmed")}
                           size="small"
                         >
-                          <CheckCircleOutlineIcon fontSize="small" />
+                          {/* <CheckCircleOutlineIcon fontSize="small" /> */}
+                          confirm
                         </SaveButton>
                         <DeleteButton
-                          disabled={a.status === "Cancelled"}
+                          disabled={a.status === "Cancelled" || a.status === "Completed"}
                           onClick={() => updateStatus(a._id, "Cancelled")}
                           size="small"
                         >
-                          <CancelIcon fontSize="small" />
+                          {/* <CancelIcon fontSize="small" /> */}
+                          cancel
                         </DeleteButton>
+                        <DefaultButton
+  size="small"
+  onClick={() => openReschedule(a)}
+  disabled={a.status === "Completed" || a.status === "Cancelled"}
+>
+  Reschedule
+</DefaultButton>
+
                       </CardActions>
                     </CardHeaderBox>
                     <CardContentBox>
@@ -471,21 +543,31 @@ const Appointments: React.FC = () => {
                           <Button
                             color="success"
                             sx={{ minWidth: 0 }}
-                            disabled={a.status === "Confirmed"}
+                            disabled={a.status === "Confirmed" || a.status === "Completed"}
                             onClick={() => updateStatus(a._id, "Confirmed")}
                             size="small"
                           >
-                            <CheckCircleOutlineIcon />
+                            {/* <CheckCircleOutlineIcon /> */}
+                            confirm
                           </Button>
                           <Button
                             color="error"
                             sx={{ minWidth: 0 }}
-                            disabled={a.status === "Cancelled"}
+                            disabled={a.status === "Cancelled" || a.status === "Completed"}
                             onClick={() => updateStatus(a._id, "Cancelled")}
                             size="small"
                           >
-                            <CancelIcon />
+                            {/* <CancelIcon /> */}
+                            cancel
                           </Button>
+                          <Button
+  size="small"
+  onClick={() => openReschedule(a)}
+  disabled={a.status === "Completed" || a.status === "Cancelled"}
+>
+  Reschedule
+</Button>
+
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -522,6 +604,61 @@ const Appointments: React.FC = () => {
             </DefaultButton>
           </Box>
         </PaginationBox>
+        <Dialog open={rescheduleOpen} onClose={() => setRescheduleOpen(false)}>
+  <DialogTitle align="center">Reschedule Appointment</DialogTitle>
+
+  <DialogContent dividers>
+    <DatePicker
+      label="New Date"
+      value={rescheduleDate}
+      onChange={(d) => {
+        setRescheduleDate(d);
+        setRescheduleTime("");
+      }}
+      shouldDisableDate={(d) =>
+        !availableDates.includes(dayjs(d).format("YYYY-MM-DD"))
+      }
+    />
+
+    {rescheduleDate && (
+      <>
+        <Typography mt={2}>Available Time Slots</Typography>
+        <Grid container spacing={1}>
+          {availability
+            .find(
+              (a) =>
+                a.date === dayjs(rescheduleDate).format("YYYY-MM-DD")
+            )
+            ?.times.map((t) => (
+              <Grid key={t}>
+                <DefaultButton
+                  variant={rescheduleTime === t ? "contained" : "outlined"}
+                  onClick={() => setRescheduleTime(t)}
+                >
+                  {t}
+                </DefaultButton>
+              </Grid>
+            ))}
+        </Grid>
+      </>
+    )}
+  </DialogContent>
+
+  <DialogActions>
+    <DeleteButton onClick={() => setRescheduleOpen(false)}>
+      Cancel
+    </DeleteButton>
+    <SaveButton
+      disabled={!rescheduleDate || !rescheduleTime}
+      onClick={async () => {
+        await handleAdminReschedule();
+      }}
+    >
+      Confirm
+    </SaveButton>
+  </DialogActions>
+</Dialog>
+
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
           <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>
             New Appointment
@@ -672,6 +809,7 @@ const Appointments: React.FC = () => {
             </Box>
           </DialogContent>
         </Dialog>
+        
       </PatientContainer>
     </LocalizationProvider>
   );

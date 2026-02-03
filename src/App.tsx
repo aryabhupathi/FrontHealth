@@ -19,12 +19,12 @@
   import Test from "./pages/Admin/Test";
   import ForgotPassword from "./pages/Login/Forgot";
 import ResetPassword from "./pages/Login/Reset";
+import PatientHistory from "./pages/Patient/PatientHistory";
   export default function App() {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const patientId = user?.role === "Patient" ? user?.linkedProfile?._id : null;
     const doctorId = user?.role === "Doctor" ? user?.linkedProfile?._id : null;
 
-    console.log(patientId, "kkkkkkkkkkkkkkkk")
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -68,6 +68,10 @@ import ResetPassword from "./pages/Login/Reset";
           <Route
             path="tests"
             element={<PatientTests patientId={patientId} />}
+          />
+          <Route
+            path="history"
+            element={<PatientHistory patientId={patientId} appointments={[]} />}
           />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} /> 
