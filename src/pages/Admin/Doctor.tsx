@@ -1,753 +1,174 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
   Typography,
-  IconButton,
-  TableCell,
-  TableRow,
-  Paper,
-  Table,
-  TableBody,
-  Collapse,
-  Autocomplete,
   Divider,
+  Paper,
   useMediaQuery,
-  CardActions,
+  IconButton,
+  Collapse,
 } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import useDebounce from "../../components/Debounce";
-interface IWorkingHour {
-  day: string;
-  startTime: string;
-  endTime: string;
-  isAvailable?: boolean;
-}
-interface IConsultationFee {
-  inPerson?: string;
-  online?: string;
-  currency?: string;
-}
-interface IContact {
-  phone?: string;
-  email?: string;
-}
-export interface IDoctor {
-  _id?: string;
-  doctorId?: string;
-  fullName: string;
-  department: string;
-  specialization: string[];
-  experience?: string;
-  qualification?: string;
-  languagesSpoken?: string[];
-  contact?: IContact;
-  consultationFee?: IConsultationFee;
-  workingHours?: IWorkingHour[];
-  accountStatus?: "pending" | "active" | "suspended";
-}
-import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs, { Dayjs } from "dayjs";
-import { FormAdminSchema } from "../../schemas/patient.schema";
-import { ZodError } from "zod";
 import {
   AddButton,
-  AutoText,
-  CardContentBox,
-  CardHeaderBox,
-  CardTitle,
-  DeleteButton,
-  FilterAutocomplete,
-  FilterWrapper,
+  DefaultButton,
   PageTitle,
   PaginationBox,
-  PatientCard,
   PatientContainer,
-  PatientTableHead,
-  SaveButton,
-  UpdateButton,
 } from "../../components/styledcomp";
-const weekDays = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-const DoctorPage: React.FC = () => {
-  const [doctors, setDoctors] = useState<IDoctor[]>([]);
-  const [filteredDoctors, setFilteredDoctors] = useState<IDoctor[]>([]);
-  const [search] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 900px)");
-  const [filter, setFilter] = useState({
-    doctorName: "",
-    department: "",
-    specialization: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+import { useDoctorForm } from "../../hooks/useDoctorForm";
+import { DoctorFilters } from "../../components/Filters/DoctorFilters";
+import { DoctorCards } from "../../components/Cards/DoctorCard";
+import { DoctorTable } from "../../components/Tables/DoctorTable";
+import { useDoctor } from "../../hooks/useDoctor";
+import type { IDoctor } from "../../types/DoctorType";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import DoctorForm from "../../components/Forms/DoctorForm";
+export default function DoctorPage() {
+  const {
+    paginatedDoctors,
+    filteredDoctors,
+    fetchDoctors,
+    filter,
+    setFilter,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    doctorsPerPage,
+    doctors,
+  } = useDoctor();
+  const form = useDoctorForm();
   const [showModal, setShowModal] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<IDoctor | null>(null);
-  const debouncedSearch = useDebounce(search, 500);
-  const [formData, setFormData] = useState<IDoctor>({
-    fullName: "",
-    department: "",
-    specialization: [""],
-    experience: "",
-    qualification: "",
-    languagesSpoken: [""],
-    contact: { phone: "", email: "" },
-    consultationFee: { inPerson: "0", online: "0", currency: "INR" },
-    workingHours: [
-      {
-        day: "Monday",
-        startTime: "09:00",
-        endTime: "17:00",
-        isAvailable: true,
-      },
-    ],
-    accountStatus: "pending",
+  const [filterOpen, setFilterOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width:900px)");
+  const normalizeDoctorForForm = (doctor: IDoctor): IDoctor => ({
+    ...doctor,
+    fullName: String(doctor.fullName ?? ""),
+    gender: String(doctor.gender ?? ""),
+    contact: {
+      phone: String(doctor.contact?.phone ?? ""),
+      email: String(doctor.contact?.email ?? ""),
+    },
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
-  const paginatedDoctors = filteredDoctors.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-  const fetchDoctors = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACK_URL}/doctor`);
-      const data = await res.json();
-      setDoctors(data);
-      setFilteredDoctors(data);
-    } catch (err) {
-      console.error("Error fetching doctors:", err);
-    }
-  };
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
-  useEffect(() => {
-    const normalizedSearch = debouncedSearch.toLowerCase();
-    const normalizedDoctorName = filter.doctorName.toLowerCase();
-    const normalizedDepartment = filter.department.toLowerCase();
-    const normalizedSpecialization = filter.specialization.toLowerCase();
-    const filtered = doctors.filter((doctor) => {
-      const matchesSearch =
-        !normalizedSearch ||
-        doctor.fullName.toLowerCase().includes(normalizedSearch);
-      const matchesDoctorName =
-        !normalizedDoctorName ||
-        doctor.fullName.toLowerCase().includes(normalizedDoctorName);
-      const matchesDepartment =
-        !normalizedDepartment ||
-        doctor.department.toLowerCase().includes(normalizedDepartment);
-      const matchesSpecialization =
-        !normalizedSpecialization ||
-        doctor.specialization.some((spec) =>
-          spec.toLowerCase().includes(normalizedSpecialization)
-        );
-      return (
-        matchesSearch &&
-        matchesDoctorName &&
-        matchesDepartment &&
-        matchesSpecialization
-      );
-    });
-    setFilteredDoctors(filtered);
-    setCurrentPage(1);
-  }, [debouncedSearch, filter, doctors]);
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value } as IDoctor));
-  };
-  const handleNestedChange = (
-    path:
-      | "contact.phone"
-      | "contact.email"
-      | "consultationFee.inPerson"
-      | "consultationFee.online",
-    value: string | number
-  ) => {
-    const [group, field] = path.split(".");
-    setFormData((prev) => ({
-      ...prev,
-      [group]: { ...(prev as any)[group], [field]: value },
-    }));
-  };
-  const handleWorkingHourChange = (
-    index: number,
-    field: keyof IWorkingHour,
-    value: string
-  ) => {
-    const updated = [...(formData.workingHours || [])];
-    updated[index] = { ...updated[index], [field]: value };
-    setFormData((prev) => ({ ...prev, workingHours: updated }));
-  };
-  const addWorkingHour = () => {
-    setFormData((prev) => ({
-      ...prev,
-      workingHours: [
-        ...(prev.workingHours || []),
-        { day: "", startTime: "09:00", endTime: "17:00", isAvailable: true },
-      ],
-    }));
-  };
-  const removeWorkingHour = (index: number) => {
-    const updated = [...(formData.workingHours || [])];
-    updated.splice(index, 1);
-    setFormData((prev) => ({ ...prev, workingHours: updated }));
-  };
-  const handleShowModal = (doctor?: IDoctor) => {
-    if (doctor) {
-      setEditingDoctor(doctor);
-      setFormData(doctor);
-    } else {
-      setEditingDoctor(null);
-      setFormData({
-        fullName: "",
-        department: "",
-        specialization: [],
-        experience: "",
-        qualification: "",
-        languagesSpoken: [],
-        contact: { phone: "", email: "" },
-        consultationFee: { inPerson: "0", online: "0", currency: "INR" },
-        workingHours: [
-          {
-            day: "Monday",
-            startTime: "09:00",
-            endTime: "17:00",
-            isAvailable: true,
-          },
-        ],
-        accountStatus: "pending",
-      });
-    }
+  const handleAdd = () => {
+    setEditingDoctor(null);
+    form.reset();
     setShowModal(true);
   };
-  const validateForm = () => {
-    try {
-      FormAdminSchema.parse({
-        ...formData,
-      });
-      setErrors({});
-      return true;
-    } catch (err) {
-      const fieldErrors: Record<string, string> = {};
-      if (err instanceof ZodError) {
-        err.issues.forEach((issue) => {
-          const path = issue.path.join(".");
-          fieldErrors[path] = issue.message;
-        });
-      } else {
-        console.error("Unexpected validation error:", err);
-      }
-      setErrors(fieldErrors);
-      return false;
-    }
+  const handleEdit = (doctor: IDoctor) => {
+    setEditingDoctor(doctor);
+    form.setFormData(normalizeDoctorForForm(doctor));
+    setShowModal(true);
   };
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!validateForm()) console.log("cde");
-    const url = editingDoctor
-      ? `${import.meta.env.VITE_BACK_URL}/doctor/${editingDoctor._id}`
+  const handleDelete = async (id?: string) => {
+    if (!id || !window.confirm("Delete this doctor?")) return;
+    await fetch(`${import.meta.env.VITE_BACK_URL}/doctor/${id}`, {
+      method: "DELETE",
+    });
+    fetchDoctors();
+  };
+  const handleSubmit = async (doctor: IDoctor, id?: string) => {
+    const method = id ? "PUT" : "POST";
+    const url = id
+      ? `${import.meta.env.VITE_BACK_URL}/doctor/${id}`
       : `${import.meta.env.VITE_BACK_URL}/doctor`;
-    const method = editingDoctor ? "PUT" : "POST";
     try {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(doctor),
       });
-      if (!res.ok) throw new Error("Failed to save doctor");
-      await res.json();
-      alert(editingDoctor ? "Doctor updated!" : "Doctor added!");
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || "Failed to save doctor");
+      }
+      await fetchDoctors();
       setShowModal(false);
-      fetchDoctors();
+      setEditingDoctor(null);
     } catch (err: any) {
-      alert("Error: " + err.message);
-    }
-  };
-  const handleDelete = async (id?: string) => {
-    if (!id) return;
-    if (!window.confirm("Are you sure you want to delete this doctor?")) return;
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACK_URL}/doctor/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete");
-      alert("Doctor deleted successfully!");
-      fetchDoctors();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+      alert(err.message);
     }
   };
   return (
     <PatientContainer>
-      <PageTitle variant="h5">Doctor</PageTitle>
+      <PageTitle variant="h5">Patients</PageTitle>
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center" gap={1}>
-          <Typography variant="h6">Filters</Typography>
-          <IconButton onClick={() => setFilterOpen(!filterOpen)} size="small">
+          <Typography variant="body2">Filters</Typography>
+          <IconButton
+            onClick={() => setFilterOpen((prev) => !prev)}
+            size="small"
+          >
             {filterOpen ? <ExpandLess /> : <ExpandMore />}
           </IconButton>
         </Box>
-        <AddButton onClick={() => handleShowModal()} size="small">
+        <AddButton size="small" onClick={handleAdd}>
           + Add Doctor
         </AddButton>
       </Box>
-      <Collapse in={filterOpen} sx={{ py: 1 }}>
-        <FilterWrapper>
-          <FilterAutocomplete
-            options={[...new Set(doctors.map((d) => d.fullName))]}
-            value={filter.doctorName || ""}
-            onChange={(_, value) =>
-              setFilter((f) => ({ ...f, doctorName: value || "" }))
-            }
-            renderInput={(params) => (
-              <AutoText {...params} label="Doctor Name" size="small" />
-            )}
-          />
-          <FilterAutocomplete
-            options={[...new Set(doctors.map((d) => d.department))]}
-            value={filter.department || ""}
-            onChange={(_, value) =>
-              setFilter((f) => ({ ...f, department: value || "" }))
-            }
-            renderInput={(params) => (
-              <AutoText {...params} label="Department" size="small" />
-            )}
-          />
-          <FilterAutocomplete
-            options={[...new Set(doctors.flatMap((d) => d.specialization))]}
-            value={filter.specialization || ""}
-            onChange={(_, value) =>
-              setFilter((f) => ({ ...f, specialization: value || "" }))
-            }
-            renderInput={(params) => (
-              <AutoText {...params} label="Specialization" size="small" />
-            )}
-          />
-          <DeleteButton
-            size="small"
-            onClick={() =>
-              setFilter({ department: "", specialization: "", doctorName: "" })
-            }
-          >
-            Clear
-          </DeleteButton>
-        </FilterWrapper>
+      <Collapse in={filterOpen}>
+        <DoctorFilters
+          filter={filter}
+          setFilter={setFilter}
+          doctors={doctors}
+        />
       </Collapse>
-      <Divider sx={{ mb: 2 }} />
-      <Typography variant="subtitle1" mb={1}>
+      <Divider sx={{ my: 1 }} />
+      <Typography variant="body1" mb={2}>
         Doctors ({filteredDoctors.length})
       </Typography>
       {isMobile ? (
-        <Box>
-          {paginatedDoctors.length === 0 ? (
-            <Paper sx={{ p: 3, textAlign: "center" }}>
-              <Typography>No doctors found</Typography>
-            </Paper>
-          ) : (
-            paginatedDoctors.map((d, i) => (
-              <PatientCard key={d._id || i}>
-                <CardHeaderBox>
-                  <CardTitle variant="subtitle2">
-                    {(currentPage - 1) * itemsPerPage + i + 1}. {d.fullName}
-                  </CardTitle>
-                  <CardActions>
-                    <Button size="small" onClick={() => handleShowModal(d)}>
-                      <EditIcon fontSize="small" />
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={() => handleDelete(d._id)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </Button>
-                  </CardActions>
-                </CardHeaderBox>
-                <CardContentBox>
-                  <div>
-                    <Typography variant="body2" color="text.secondary">
-                      Department
-                    </Typography>
-                    <Typography variant="body2">
-                      {d.department || "—"}
-                    </Typography>
-                  </div>
-                  <div>
-                    <Typography variant="body2" color="text.secondary">
-                      Specialization
-                    </Typography>
-                    <Typography variant="body2">
-                      {d.specialization?.join(", ") || "—"}
-                    </Typography>
-                  </div>
-                  <div>
-                    <Typography variant="body2" color="text.secondary">
-                      Experience
-                    </Typography>
-                    <Typography variant="body2">
-                      {d.experience ? `${d.experience} yrs` : "—"}
-                    </Typography>
-                  </div>
-                  <div>
-                    <Typography variant="body2" color="text.secondary">
-                      Contact
-                    </Typography>
-                    <Typography variant="body2">
-                      {d.contact?.phone || "—"}
-                    </Typography>
-                  </div>
-                </CardContentBox>
-              </PatientCard>
-            ))
-          )}
-        </Box>
+        <DoctorCards
+          doctors={paginatedDoctors}
+          currentPage={currentPage}
+          doctorsPerPage={doctorsPerPage}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       ) : (
         <Paper
-          elevation={0}
+          variant="outlined"
           sx={{
-            borderRadius: 2,
             overflow: "auto",
-            border: "1px solid",
-            borderColor: "divider",
           }}
         >
-          <Table>
-            <PatientTableHead>
-              <TableRow
-                sx={{
-                  backgroundColor: "action.hover",
-                  "& th": {
-                    fontWeight: 600,
-                  },
-                }}
-              >
-                <TableCell>Id</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Specialization</TableCell>
-                <TableCell>Experience</TableCell>
-                <TableCell>Contact</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </PatientTableHead>
-            <TableBody>
-              {paginatedDoctors.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    No doctors found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedDoctors.map((d, i) => (
-                  <TableRow
-                    key={d._id}
-                    sx={{
-                      "& .MuiTableCell-root": {
-                        py: 0.3,
-                        height: 24,
-                      },
-                    }}
-                  >
-                    <TableCell>
-                      {(currentPage - 1) * itemsPerPage + i + 1}
-                    </TableCell>
-                    <TableCell>{d.fullName}</TableCell>
-                    <TableCell>{d.department}</TableCell>
-                    <TableCell>{d.specialization.join(", ")}</TableCell>
-                    <TableCell>{d.experience || "-"} yrs</TableCell>
-                    <TableCell>{d.contact?.phone}</TableCell>
-                    <TableCell>
-                      <Box
-                        sx={{ display: "flex", justifyContent: "space-around" }}
-                      >
-                        <Button
-                          sx={{ minWidth: 0 }}
-                          color="primary"
-                          size="small"
-                          onClick={() => handleShowModal(d)}
-                        >
-                          <EditIcon />
-                        </Button>
-                        <Button
-                          sx={{ minWidth: 0 }}
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(d._id)}
-                        >
-                          <DeleteIcon />
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <DoctorTable
+            doctors={paginatedDoctors}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            currentPage={currentPage}
+            doctorsPerPage={doctorsPerPage}
+          />
         </Paper>
       )}
       <PaginationBox>
         <Typography variant="body2">
-          Showing {(currentPage - 1) * itemsPerPage + 1}–
-          {Math.min(currentPage * itemsPerPage, filteredDoctors.length)} of{" "}
+          Showing {(currentPage - 1) * doctorsPerPage + 1}–
+          {Math.min(currentPage * doctorsPerPage, filteredDoctors.length)} of{" "}
           {filteredDoctors.length}
         </Typography>
         <Box>
-          <Button
+          <DefaultButton
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => p - 1)}
-            size="small"
           >
             Prev
-          </Button>
-          <Button
+          </DefaultButton>
+          <DefaultButton
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((p) => p + 1)}
-            size="small"
           >
             Next
-          </Button>
+          </DefaultButton>
         </Box>
       </PaginationBox>
-      <Dialog
+      <DoctorForm
         open={showModal}
+        editingDoctor={editingDoctor}
         onClose={() => setShowModal(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ justifyContent: "center", display: "flex" }}>
-          {editingDoctor ? "Edit Doctor" : "Add Doctor"}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Box component="form" onSubmit={handleSubmit} mt={1}>
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  fullWidth
-                  name="fullName"
-                  label="Full Name"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                  margin="dense"
-                  size="small"
-                  error={!!errors.fullName}
-                  helperText={errors.fullName}
-                />
-                <TextField
-                  fullWidth
-                  name="department"
-                  label="Department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  required
-                  margin="dense"
-                  size="small"
-                  error={!!errors.department}
-                  helperText={errors.department}
-                />
-                <TextField
-                  fullWidth
-                  label="Specialization"
-                  value={formData.specialization.join(", ")}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      specialization: e.target.value
-                        .split(",")
-                        .map((s) => s.trim()),
-                    })
-                  }
-                  margin="dense"
-                  size="small"
-                />
-                <TextField
-                  fullWidth
-                  name="experience"
-                  label="Experience (Years)"
-                  value={formData.experience || ""}
-                  onChange={handleChange}
-                  required
-                  size="small"
-                  margin="dense"
-                  error={!!errors.experience}
-                  helperText={errors.experience}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  fullWidth
-                  label="Phone"
-                  value={formData.contact?.phone || ""}
-                  onChange={(e) =>
-                    handleNestedChange("contact.phone", e.target.value)
-                  }
-                  margin="dense"
-                  size="small"
-                  error={!!errors["contact.phone"]}
-                  helperText={errors["contact.phone"]}
-                />
-                <TextField
-                  fullWidth
-                  label="Email"
-                  type="email"
-                  value={formData.contact?.email || ""}
-                  onChange={(e) =>
-                    handleNestedChange("contact.email", e.target.value)
-                  }
-                  margin="dense"
-                  size="small"
-                  error={!!errors["contact.email"]}
-                  helperText={errors["contact.email"]}
-                />
-                <TextField
-                  fullWidth
-                  label="In-person Fee (₹)"
-                  value={formData.consultationFee?.inPerson || ""}
-                  onChange={(e) =>
-                    handleNestedChange(
-                      "consultationFee.inPerson",
-                      +e.target.value
-                    )
-                  }
-                  size="small"
-                  margin="dense"
-                  error={!!errors["consultationFee?.inPerson"]}
-                  helperText={errors["consultationFee?.inPerson"]}
-                />
-                <TextField
-                  fullWidth
-                  label="Online Fee (₹)"
-                  value={formData.consultationFee?.online || ""}
-                  onChange={(e) =>
-                    handleNestedChange(
-                      "consultationFee.online",
-                      +e.target.value
-                    )
-                  }
-                  size="small"
-                  margin="dense"
-                  error={!!errors["consultationFee?.online"]}
-                  helperText={errors["consultationFee?.online"]}
-                />
-              </Grid>
-            </Grid>
-            <Typography variant="subtitle1" mt={3} mb={1} fontWeight={600}>
-              Working Hours
-            </Typography>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              {formData.workingHours?.map((wh, i) => (
-                <Grid container spacing={1} key={i} alignItems="center" mb={1}>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <Autocomplete
-                      options={weekDays}
-                      value={wh.day || ""}
-                      onChange={(_, value) =>
-                        handleWorkingHourChange(i, "day", value ?? "")
-                      }
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Day"
-                          size="small"
-                          margin="dense"
-                          error={!!errors.workingHours}
-                          helperText={errors.workingHours}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 6, md: 3 }}>
-                    <TimePicker
-                      label="Start Time"
-                      value={wh.startTime ? dayjs(wh.startTime, "HH:mm") : null}
-                      onChange={(val) =>
-                        handleWorkingHourChange(
-                          i,
-                          "startTime",
-                          val ? (val as Dayjs).format("HH:mm") : ""
-                        )
-                      }
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          margin: "dense",
-                          size: "small",
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 6, md: 3 }}>
-                    <TimePicker
-                      label="End Time"
-                      value={wh.endTime ? dayjs(wh.endTime, "HH:mm") : null}
-                      onChange={(val) =>
-                        handleWorkingHourChange(
-                          i,
-                          "endTime",
-                          val ? (val as Dayjs).format("HH:mm") : ""
-                        )
-                      }
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          margin: "dense",
-                          size: "small",
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 2 }}>
-                    <DeleteButton
-                      size="small"
-                      onClick={() => removeWorkingHour(i)}
-                    >
-                      X
-                    </DeleteButton>
-                  </Grid>
-                </Grid>
-              ))}
-            </LocalizationProvider>
-            <AddButton onClick={addWorkingHour}>+ Add Slot</AddButton>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <DeleteButton onClick={() => setShowModal(false)} color="error">
-            Cancel
-          </DeleteButton>
-          {editingDoctor ? (
-            <UpdateButton size="small" onClick={handleSubmit}>
-              Update
-            </UpdateButton>
-          ) : (
-            <SaveButton size="small" onClick={handleSubmit}>
-              Save
-            </SaveButton>
-          )}
-        </DialogActions>
-      </Dialog>
+        onSave={handleSubmit}
+      />
     </PatientContainer>
   );
-};
-export default DoctorPage;
+}

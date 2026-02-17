@@ -294,7 +294,6 @@ const handleAdminReschedule = async () => {
       console.error(err);
     }
   };
-  console.log(paginatedAppointments, "papapappapaapp");
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <PatientContainer>

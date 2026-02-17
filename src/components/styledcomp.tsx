@@ -15,11 +15,13 @@ import {
   ListItemButton,
   ListItemIcon,
   Drawer,
+  TableRow,
 } from "@mui/material";
 export const DeleteButton = styled(Button)(({ theme }) => ({
   color: theme.palette.error.main,
   textTransform: "none",
   borderRadius: 999,
+  
 }));
 export const AddButton = styled(Button)(({ theme }) => ({
   color: theme.palette.primary.main,
@@ -57,7 +59,11 @@ export const FilterWrapper = styled(Box)(({ theme }) => ({
   flexDirection: "column",
   padding: theme.spacing(1),
   borderRadius: theme.shape.borderRadius,
-  background: theme.palette.glass.soft,
+  // background: theme.palette.glass.soft,
+  background:
+    theme.palette.mode === "dark"
+      ? theme.palette.glass.darker
+      : theme.palette.glass.soft,
   boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
   "& > *": {
     width: "100%",
@@ -80,7 +86,7 @@ export const FilterAutocomplete = styled(
 )(({ theme }) => ({
   width: "100%",
   flex: "1 1 100%",
-  padding: 2,
+  padding: 5,
   "& .MuiOutlinedInput-root": {
     background: theme.palette.background.paper,
     height: 40,
@@ -157,11 +163,14 @@ export const PaginationBox = styled(Box)(({ theme }) => ({
   alignItems: "center",
   marginTop: theme.spacing(2),
 }));
-export const ModalActions = styled(Box)(({ theme }) => ({
+export const ModalActions = styled(Box)(({theme}) => ({
   display: "flex",
   justifyContent: "flex-end",
-  gap: theme.spacing(2),
-  marginTop: theme.spacing(3),
+  // gap: theme.spacing(2),
+  // marginTop: theme.spacing(3),
+  [theme.breakpoints.down("sm")]: {
+    marginTop: theme.spacing(2), // mobile spacing
+  },
 }));
 export const DashboardContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -355,7 +364,7 @@ export const MobileBox = styled(Box)(({ theme }) => ({
   border:"2px solid red",
   zIndex: theme.zIndex.drawer + 1,
 }));
-export const MobileToggleButton = styled(IconButton)(({ theme }) => ({
+export const MobileToggleButton = styled(IconButton)(() => ({
   // position: "fixed",
   // top: 16,
   // left: 16,
@@ -387,18 +396,18 @@ export const SidebarHeader = styled(Box)<{ open: boolean }>(
   ({ theme, open }) => ({
     display: "flex",
     alignItems: "center",
-    justifyContent: open ? "space-between" : "center",
-    padding: open ? theme.spacing(2) : theme.spacing(1),
+    justifyContent: open ? "space-around" : "center",
+    padding: open ? theme.spacing(1) : theme.spacing(1),
     borderBottom: `1px solid ${theme.palette.glass.cardBorder}`,
     minHeight: 64,
   }),
 );
 export const SidebarListButton = styled(ListItemButton)<{ open: boolean }>(
   ({ theme, open }) => ({
-    padding: open ? theme.spacing(1.5, 2) : theme.spacing(1),
+    padding: open ? theme.spacing(0.5, 1.5) : theme.spacing(1),
     borderRadius: 999,
     margin: open ? theme.spacing(0.5, 1) : theme.spacing(0.5),
-    minHeight: 44,
+    minHeight: 30,
     justifyContent: open ? "flex-start" : "center",
     "&.active": {
       backgroundColor:
@@ -432,4 +441,9 @@ export const Overlay = styled(Box)(({ theme }) => ({
   backgroundColor: "rgba(15,23,42,0.6)",
   backdropFilter: "blur(4px)",
   zIndex: theme.zIndex.drawer - 1,
+}));
+export const StyledTableRow = styled(TableRow)(() => ({
+  "&:last-child td": {
+    borderBottom: "none",
+  },
 }));

@@ -159,7 +159,7 @@ export default function Sidebar({
                   {user?.name || "User"}
                 </Typography>
               </Box>
-              <Box display="flex" gap={1}>
+              <Box display="flex">
                 <Tooltip
                   title={`Switch to ${mode === "dark" ? "light" : "dark"} mode`}
                 >

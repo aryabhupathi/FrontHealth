@@ -207,7 +207,6 @@ const DoctorAppointments = ({ doctorId }: { doctorId: string }) => {
       console.error(err);
     }
   };
-  console.log(labTests, "llllllllllllll");
   return (
     <PatientContainer>
       <PageTitle variant="h5">My Appointments</PageTitle>

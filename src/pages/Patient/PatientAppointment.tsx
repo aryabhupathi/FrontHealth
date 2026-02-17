@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Dialog,
@@ -39,14 +39,24 @@ import {
   PatientTableHead,
   SaveButton,
 } from "../../components/styledcomp";
+import { PrescriptionPDF } from "../../components/PrescriptionPDF";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 interface Doctor {
   _id: string;
   fullName: string;
+}
+interface Patient {
+  _id: string;
+  fullName: string;
+  gender: string;
+  age: number;
 }
 interface Prescription {
   _id: string;
   diagnosis: string;
   advice?: string;
+
+  patient: Patient;
   medicines: {
     name: string;
     dosage: string;
@@ -87,44 +97,94 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
     const matchesStatus = filterStatus === "" || a.status === filterStatus;
     return matchesDoctor && matchesDate && matchesStatus;
   });
+  // useEffect(() => {
+  //   if (!patientId) return;
+  //   const fetchData = async () => {
+  //     try {
+  //       const [appointmentsRes, prescriptionsRes] = await Promise.all([
+  //         fetch(
+  //           `${import.meta.env.VITE_BACK_URL}/appointment/patient/${patientId}`
+  //         ),
+  //         fetch(
+  //           `${import.meta.env.VITE_BACK_URL}/prescription/patient/${patientId}`
+  //         ),
+  //       ]);
+  //       const appointmentsData = await appointmentsRes.json();
+  //       const prescriptionsData = await prescriptionsRes.json();
+  //       console.log(prescriptionsData, "prescriptionsData");
+  //       const merged = appointmentsData.map((apt: Appointment) => {
+  //         const prescription = prescriptionsData.find(
+  //           (p: any) => p.appointment && p.appointment._id === apt._id
+  //         );
+  //         return {
+  //           ...apt,
+  //           prescription: prescription ?? null,
+  //         };
+  //       });
+  //       setAppointments(merged);
+  //     } catch (err) {
+  //       console.error("Failed to load appointments", err);
+  //     }
+  //   };
+  //   fetchData();
+  // }, [patientId]);
+
   useEffect(() => {
+    console.log("useEffect triggered, patientId =", patientId);
+
     if (!patientId) return;
+
     const fetchData = async () => {
       try {
         const [appointmentsRes, prescriptionsRes] = await Promise.all([
           fetch(
-            `${import.meta.env.VITE_BACK_URL}/appointment/patient/${patientId}`
+            `${import.meta.env.VITE_BACK_URL}/appointment/patient/${patientId}`,
           ),
           fetch(
-            `${import.meta.env.VITE_BACK_URL}/prescription/patient/${patientId}`
+            `${import.meta.env.VITE_BACK_URL}/prescription/patient/${patientId}`,
           ),
         ]);
+
+        console.log("responses received");
+
+        if (!appointmentsRes.ok || !prescriptionsRes.ok) {
+          throw new Error("Fetch failed");
+        }
+
         const appointmentsData = await appointmentsRes.json();
         const prescriptionsData = await prescriptionsRes.json();
-        const merged = appointmentsData.map((apt: Appointment) => {
-          const prescription = prescriptionsData.find(
-            (p: any) => p.appointment && p.appointment._id === apt._id
-          );
-          return {
-            ...apt,
-            prescription: prescription ?? null,
-          };
-        });
+
+        console.log("prescriptionsData 👉", prescriptionsData);
+
+        const merged = appointmentsData.map((apt: Appointment) => ({
+          ...apt,
+          prescription:
+            prescriptionsData.find(
+              (p: any) => p.appointment?._id === apt._id,
+            ) ?? null,
+        }));
+
         setAppointments(merged);
       } catch (err) {
         console.error("Failed to load appointments", err);
       }
     };
+
     fetchData();
   }, [patientId]);
   const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
+  const pdfDocument = useMemo(() => {
+  if (!selectedPrescription) return null;
+  return <PrescriptionPDF prescription={selectedPrescription} />;
+}, [selectedPrescription]);
+
   const paginateditems = filteredAppointments.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
   const handleOpenPrescription = (p: Prescription) => {
     setSelectedPrescription(p);
-  };
+  }
   return (
     <PatientContainer>
       <PageTitle variant="h5">My Appointments</PageTitle>
@@ -218,11 +278,15 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
                   </Typography>
                   <Box mt={1}>
                     {a.prescription ? (
-                      <SaveButton
-                        onClick={() => handleOpenPrescription(a.prescription!)}
-                      >
-                        View Prescription
-                      </SaveButton>
+                      <>
+                        <SaveButton
+                          onClick={() =>
+                            handleOpenPrescription(a.prescription!)
+                          }
+                        >
+                          View Prescription
+                        </SaveButton>{" "}
+                      </>
                     ) : (
                       <Typography color="text.secondary">
                         No Prescription
@@ -286,14 +350,18 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
                       <TableCell>{a.status}</TableCell>
                       <TableCell>
                         {a.prescription ? (
-                          <DefaultButton
-                            onClick={() =>
-                              handleOpenPrescription(a.prescription!)
-                            }
-                            size="small"
-                          >
-                            View
-                          </DefaultButton>
+                          <>
+                            {" "}
+                            <DefaultButton
+                              onClick={() =>
+                                handleOpenPrescription(a.prescription!)
+                              }
+                              size="small"
+                            >
+                              View
+                            </DefaultButton>
+                 
+                          </>
                         ) : (
                           <Typography color="text.secondary">
                             Not issued
@@ -399,6 +467,27 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
                   </TableBody>
                 </Table>
               </Paper>
+              {/* <SaveButton
+              onClick={() =>
+                handleDownloadPrescription(a.prescription!)
+              }
+              >
+                Download Prescription
+              </SaveButton> */}
+              {pdfDocument && (
+  <PDFDownloadLink
+    document={pdfDocument}
+    fileName={`prescription_${selectedPrescription._id}.pdf`}
+    style={{ textDecoration: "none" }}
+  >
+    {({ loading }) => (
+      <DefaultButton disabled={loading}>
+        {loading ? "Preparing PDF..." : "Download Prescription"}
+      </DefaultButton>
+    )}
+  </PDFDownloadLink>
+)}
+
             </>
           )}
         </DialogContent>
@@ -425,7 +514,7 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
               fetch(
                 `${
                   import.meta.env.VITE_BACK_URL
-                }/appointment/patient/${patientId}`
+                }/appointment/patient/${patientId}`,
               )
                 .then((r) => r.json())
                 .then((d) => setAppointments(d));
