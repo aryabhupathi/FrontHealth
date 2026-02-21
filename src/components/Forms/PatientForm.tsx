@@ -10,10 +10,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Typography,
   DialogActions,
   FormControlLabel,
   Switch,
+  FormHelperText,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -69,6 +69,9 @@ export function PatientForm({
                 helperText={errors.fullName}
                 fullWidth
                 size="small"
+                required
+                id="outlined-required"
+                // margin="dense"
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -81,6 +84,9 @@ export function PatientForm({
                 helperText={errors.email}
                 fullWidth
                 size="small"
+                required
+                // margin="dense"
+                id="outlined-required"
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -93,6 +99,9 @@ export function PatientForm({
                 helperText={errors["contact.phone"]}
                 fullWidth
                 size="small"
+                required
+                id="outlined-required"
+                // margin="dense"
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -105,55 +114,68 @@ export function PatientForm({
                 helperText={errors["contact.address"]}
                 fullWidth
                 size="small"
+                required
+                id="outlined-required"
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    label="Date of Birth"
-                    value={formData.dob}
-                    maxDate={dayjs()}
-                    onChange={(newValue) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        dob: newValue as Dayjs | null,
-                      }))
-                    }
-
-                    slotProps={{
-                      textField: {
-                        error: !!errors.dob,
-                        helperText: errors.dob,
-                        size: "small",
-                        fullWidth: true,
-                      },
-                    }}
-                  />
-                </LocalizationProvider>
-             
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Date of Birth"
+                  value={formData.dob}
+                  maxDate={dayjs()}
+                  onChange={(newValue) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      dob: newValue as Dayjs | null,
+                    }))
+                  }
+                  slotProps={{
+                    textField: {
+                      error: !!errors.dob,
+                      helperText: errors.dob,
+                      size: "small",
+                      fullWidth: true,
+                      required: true,
+                      margin: "dense",
+                    },
+                  }}
+                />
+              </LocalizationProvider>
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
-              <FormControl fullWidth size="small" error={!!errors.gender}>
+              <FormControl
+                fullWidth
+                size="small"
+                error={!!errors.gender}
+                required
+                margin="dense"
+              >
                 <InputLabel>Gender</InputLabel>
                 <Select
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
                   label="Gender"
+                  margin="dense"
                 >
                   <MenuItem value="Male">Male</MenuItem>
                   <MenuItem value="Female">Female</MenuItem>
                   <MenuItem value="Other">Other</MenuItem>
                 </Select>
                 {errors.gender && (
-                  <Typography color="error" fontSize={12}>
-                    {errors.gender}
-                  </Typography>
+                  <FormHelperText>{errors.gender}</FormHelperText>
                 )}
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
-              <FormControl fullWidth size="small" error={!!errors.bloodGroup}>
+              <FormControl
+                fullWidth
+                size="small"
+                error={!!errors.bloodGroup}
+                required
+                margin="dense"
+              >
                 <InputLabel>Blood Group</InputLabel>
                 <Select
                   name="bloodGroup"
@@ -170,9 +192,7 @@ export function PatientForm({
                   )}
                 </Select>
                 {errors.bloodGroup && (
-                  <Typography color="error" fontSize={12}>
-                    {errors.bloodGroup}
-                  </Typography>
+                  <FormHelperText>{errors.bloodGroup}</FormHelperText>
                 )}
               </FormControl>
             </Grid>
@@ -250,7 +270,7 @@ export function PatientForm({
             Update
           </UpdateButton>
         ) : (
-          <SaveButton size="small" type="submit" form="patient-form">
+          <SaveButton size="small" type="submit" form="patient-form"  >
             Save
           </SaveButton>
         )}

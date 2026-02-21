@@ -479,18 +479,18 @@ const getTheme = (mode: PaletteMode) =>
                 ? "rgba(15,23,42,0.9)"
                 : "rgba(255,255,255,0.9)",
 
-            "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: "rgba(148,163,184,0.45)",
-            },
+            // "& .MuiOutlinedInput-notchedOutline": {
+            //   borderColor: "rgba(148,163,184,0.45)",
+            // },
 
-            "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: "rgba(129,140,248,0.9)",
-            },
+            // "&:hover .MuiOutlinedInput-notchedOutline": {
+            //   borderColor: "rgba(129,140,248,0.9)",
+            // },
 
-            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-              borderColor: "rgba(129,140,248,1)",
-              boxShadow: "0 0 0 1px rgba(129,140,248,0.6)",
-            },
+            // "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            //   borderColor: "rgba(129,140,248,1)",
+            //   boxShadow: "0 0 0 1px rgba(129,140,248,0.6)",
+            // },
 
             "&.Mui-error .MuiOutlinedInput-notchedOutline": {
               borderColor: theme.palette.error.main,

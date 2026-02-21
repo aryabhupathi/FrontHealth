@@ -40,7 +40,9 @@ export function DoctorTable({
       <TableBody>
         {doctors.map((p, index) => (
           <StyledTableRow key={p._id}>
-            <TableCell>{(currentPage - 1) * doctorsPerPage + index + 1}</TableCell>
+            <TableCell>
+              {(currentPage - 1) * doctorsPerPage + index + 1}
+            </TableCell>
             <TableCell>{p.fullName}</TableCell>
             <TableCell>{p.department}</TableCell>
             <TableCell>{p.specialization.join(", ")}</TableCell>

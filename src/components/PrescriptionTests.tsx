@@ -36,7 +36,7 @@ export default function PrescriptionTests({
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     fetch(
-      `${import.meta.env.VITE_BACK_URL}/prescriptions/${prescriptionId}/tests`
+      `${import.meta.env.VITE_BACK_URL}/prescriptions/${prescriptionId}/tests`,
     )
       .then((res) => res.json())
       .then(setTests)
@@ -48,7 +48,7 @@ export default function PrescriptionTests({
     setSelected(
       exists
         ? selected.filter((t) => t.test._id !== test.test._id)
-        : [...selected, test]
+        : [...selected, test],
     );
   };
   const confirmBooking = async () => {
@@ -67,8 +67,8 @@ export default function PrescriptionTests({
         prev.map((t) =>
           selected.some((s) => s.test._id === t.test._id)
             ? { ...t, isBooked: true }
-            : t
-        )
+            : t,
+        ),
       );
       setSelected([]);
       setOpen(false);

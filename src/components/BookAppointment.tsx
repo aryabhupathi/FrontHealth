@@ -1,11 +1,5 @@
- 
 import React, { useState, useEffect, useMemo, type FormEvent } from "react";
-import {
-  TextField,
-  Grid,
-  Box,
-  Autocomplete,
-} from "@mui/material";
+import { TextField, Grid, Box, Autocomplete } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -55,9 +49,8 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
   const [apptype, setAppType] = useState("In-person");
   const selectedDoctorData = useMemo(
     () => doctors.find((doc) => doc._id === selectedDoctor),
-    [doctors, selectedDoctor]
+    [doctors, selectedDoctor],
   );
-
   const availableDates = useMemo(() => {
     if (!selectedDoctorData?.workingHours) return [];
     const workingDays = selectedDoctorData.workingHours.map((wh) => wh.day);
@@ -77,12 +70,11 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
     if (!date || !selectedDoctorData?.workingHours) return [];
     const dayName = getDayName(date);
     const schedule = selectedDoctorData.workingHours.find(
-      (wh) => wh.day === dayName
+      (wh) => wh.day === dayName,
     );
     if (!schedule) return [];
     return generateTimeSlots(schedule.startTime, schedule.endTime);
   }, [date, selectedDoctorData]);
-  
   useEffect(() => {
     fetch(`${import.meta.env.VITE_BACK_URL}/doctor`)
       .then((res) => res.json())
@@ -126,8 +118,7 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
   return (
     <form onSubmit={handleSubmit}>
       <Grid container spacing={2}>
-        
-        <Grid size={{xs:12}}>
+        <Grid size={{ xs: 12 }}>
           <Autocomplete
             options={doctors}
             getOptionLabel={(opt) => opt.fullName}
@@ -142,69 +133,40 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
             )}
           />
         </Grid>
-
-        <Grid size={{ xs:12, sm:6}}>
-          {/* <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
               label="Select Date"
               value={date}
-              onChange={(d:any) => {
-                setDate(d);
+              disabled={!selectedDoctor}
+              onChange={(value) => {
+                if (!value) {
+                  setDate(null);
+                } else {
+                  setDate(value instanceof Date ? value : value.toDate());
+                }
                 setTime("");
               }}
-              disabled={!selectedDoctor}
-              shouldDisableDate={(d) =>
-                !availableDates.some(
-                  (allowed) => allowed.toDateString() === d?.toString()
-                )
-              }
+              shouldDisableDate={(value) => {
+                if (!value) return true;
+                const d = value instanceof Date ? value : value.toDate();
+                return !availableDates.some(
+                  (allowed) =>
+                    allowed.getFullYear() === d.getFullYear() &&
+                    allowed.getMonth() === d.getMonth() &&
+                    allowed.getDate() === d.getDate(),
+                );
+              }}
               slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        size: "small",
-                      },
-                    }}
+                textField: {
+                  fullWidth: true,
+                  size: "small",
+                },
+              }}
             />
-          </LocalizationProvider> */}
-
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-  <DatePicker
-    label="Select Date"
-    value={date}
-    disabled={!selectedDoctor}
-    onChange={(value) => {
-      if (!value) {
-        setDate(null);
-      } else {
-        setDate(value instanceof Date ? value : value.toDate());
-      }
-      setTime("");
-    }}
-    shouldDisableDate={(value) => {
-      if (!value) return true;
-
-      const d =
-        value instanceof Date ? value : value.toDate();
-
-      return !availableDates.some(
-        (allowed) =>
-          allowed.getFullYear() === d.getFullYear() &&
-          allowed.getMonth() === d.getMonth() &&
-          allowed.getDate() === d.getDate()
-      );
-    }}
-    slotProps={{
-      textField: {
-        fullWidth: true,
-        size: "small",
-      },
-    }}
-  />
-</LocalizationProvider>
-
+          </LocalizationProvider>
         </Grid>
-
-        <Grid size={{ xs:12, sm:6}}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Autocomplete
             options={availableTimeSlots}
             value={time || null}
@@ -215,8 +177,7 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
             )}
           />
         </Grid>
-
-        <Grid size={{ xs:12}}>
+        <Grid size={{ xs: 12 }}>
           <Autocomplete
             options={["In-person", "Online"]}
             value={apptype}
@@ -226,8 +187,7 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
             )}
           />
         </Grid>
-
-        <Grid size={{ xs:12}}>
+        <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
             multiline
@@ -237,13 +197,10 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
             onChange={(e) => setReason(e.target.value)}
           />
         </Grid>
-
-        <Grid size={{ xs:12}}>
+        <Grid size={{ xs: 12 }}>
           <Box display="flex" justifyContent="flex-end" gap={2}>
-            <DeleteButton onClick={onCancel}>
-              Cancel
-            </DeleteButton>
-           <AddButton
+            <DeleteButton onClick={onCancel}>Cancel</DeleteButton>
+            <AddButton
               type="submit"
               disabled={!selectedDoctor || !date || !time}
             >
@@ -251,10 +208,8 @@ const BookAppointment: React.FC<BookAppointmentProps> = ({
             </AddButton>
           </Box>
         </Grid>
-
       </Grid>
     </form>
-);
-
+  );
 };
 export default BookAppointment;

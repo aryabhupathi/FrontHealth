@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Dialog,
@@ -39,8 +39,8 @@ import {
   PatientTableHead,
   SaveButton,
 } from "../../components/styledcomp";
-import { PrescriptionPDF } from "../../components/PrescriptionPDF";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+// import { PrescriptionPDF } from "../../components/PrescriptionPDF";
+// import { PDFDownloadLink } from "@react-pdf/renderer";
 interface Doctor {
   _id: string;
   fullName: string;
@@ -173,10 +173,10 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
     fetchData();
   }, [patientId]);
   const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
-  const pdfDocument = useMemo(() => {
-  if (!selectedPrescription) return null;
-  return <PrescriptionPDF prescription={selectedPrescription} />;
-}, [selectedPrescription]);
+//   const pdfDocument = useMemo(() => {
+//   if (!selectedPrescription) return null;
+//   // return <PrescriptionPDF prescription={selectedPrescription} />;
+// }, [selectedPrescription]);
 
   const paginateditems = filteredAppointments.slice(
     (currentPage - 1) * itemsPerPage,
@@ -474,7 +474,7 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
               >
                 Download Prescription
               </SaveButton> */}
-              {pdfDocument && (
+              {/* {pdfDocument && (
   <PDFDownloadLink
     document={pdfDocument}
     fileName={`prescription_${selectedPrescription._id}.pdf`}
@@ -486,7 +486,7 @@ const PatientAppointment = ({ patientId }: { patientId: string }) => {
       </DefaultButton>
     )}
   </PDFDownloadLink>
-)}
+)} */}
 
             </>
           )}

@@ -17,6 +17,7 @@ import {
   Drawer,
   TableRow,
 } from "@mui/material";
+import type { NavLinkProps } from "react-router-dom";
 export const DeleteButton = styled(Button)(({ theme }) => ({
   color: theme.palette.error.main,
   textTransform: "none",
@@ -402,31 +403,34 @@ export const SidebarHeader = styled(Box)<{ open: boolean }>(
     minHeight: 64,
   }),
 );
-export const SidebarListButton = styled(ListItemButton)<{ open: boolean }>(
-  ({ theme, open }) => ({
-    padding: open ? theme.spacing(0.5, 1.5) : theme.spacing(1),
-    borderRadius: 999,
-    margin: open ? theme.spacing(0.5, 1) : theme.spacing(0.5),
-    minHeight: 30,
-    justifyContent: open ? "flex-start" : "center",
-    "&.active": {
-      backgroundColor:
-        theme.palette.mode === "dark"
-          ? "rgba(129,140,248,0.22)"
-          : "rgba(191,219,254,0.9)",
-      color:
-        theme.palette.mode === "dark"
-          ? theme.palette.primary.light
-          : theme.palette.primary.main,
-    },
-    "&:hover": {
-      backgroundColor:
-        theme.palette.mode === "dark"
-          ? "rgba(148,163,184,0.18)"
-          : "rgba(226,232,240,0.9)",
-    },
-  }),
-);
+// export const SidebarListButton = styled(ListItemButton)<{ open: boolean }>(
+export const SidebarListButton = styled(ListItemButton)<{
+  open: boolean;
+  component?: React.ElementType;
+  to?: NavLinkProps["to"];
+}>(({ theme, open }) => ({
+  padding: open ? theme.spacing(0.5, 1.5) : theme.spacing(1),
+  borderRadius: 999,
+  margin: open ? theme.spacing(0.5, 1) : theme.spacing(0.5),
+  minHeight: 30,
+  justifyContent: open ? "flex-start" : "center",
+  "&.active": {
+    backgroundColor:
+      theme.palette.mode === "dark"
+        ? "rgba(129,140,248,0.22)"
+        : "rgba(191,219,254,0.9)",
+    color:
+      theme.palette.mode === "dark"
+        ? theme.palette.primary.light
+        : theme.palette.primary.main,
+  },
+  "&:hover": {
+    backgroundColor:
+      theme.palette.mode === "dark"
+        ? "rgba(148,163,184,0.18)"
+        : "rgba(226,232,240,0.9)",
+  },
+}));
 export const SidebarListIcon = styled(ListItemIcon)<{ open: boolean }>(
   ({ theme, open }) => ({
     minWidth: 0,

@@ -1,26 +1,27 @@
+// useLabTestForm.ts
 import { useState } from "react";
-import { DoctorSchema } from "../schemas/doctor.schema";
-import type { IDoctor } from "../types/DoctorType";
-const emptyForm: IDoctor = {
-  fullName: "",
+import type { LabTestFormData } from "../types/LabTestTypes";
+import { LabTestSchema } from "../schemas/labTest.schema";
+const emptyForm: LabTestFormData = {
+  name: "",
+  code: "",
+  billingCode: "",
   department: "",
-  gender: undefined,
-  specialization: [],
-  experience: "",
-  qualification: "",
-  languagesSpoken: [],
-  contact: { phone: "", email: "" },
-  consultationFee: { inPerson: "", online: "", currency: "INR" },
-  workingHours: [],
-  accountStatus: "pending",
-  joiningDate: new Date().toISOString(),
+  sampleType: "Blood",
+  price: 0,
+  priceType: "FIXED",
+  turnaroundTime: "",
+  homeCollectionAllowed: false,
+  preparationInstructions: "",
 };
-export function useDoctorForm() {
-  const [formData, setFormData] = useState<IDoctor>(emptyForm);
+export function useLabTestForm(initialData?: LabTestFormData) {
+  const [formData, setFormData] = useState<LabTestFormData>(
+    initialData ?? emptyForm,
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const validate = () => {
-    const result = DoctorSchema.safeParse(formData);
+    const result = LabTestSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.issues.forEach((issue) => {

@@ -126,49 +126,49 @@
 // });
 // export type PatientAdminFormValues = z.infer<typeof FormAdminSchema>;
 import { z } from "zod";
-const weekDays = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-] as const;
-const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-const WorkingHourSchema = z
-  .object({
-    day: z.enum(weekDays, {
-      message: "Invalid day of week",
-    }),
-    startTime: z
-      .string()
-      .min(1, "Start time is required")
-      .regex(timeRegex, "Start time must be in HH:mm format"),
-    endTime: z
-      .string()
-      .min(1, "End time is required")
-      .regex(timeRegex, "End time must be in HH:mm format"),
-    isAvailable: z.boolean().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.startTime >= data.endTime) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["endTime"],
-        message: "End time must be after start time",
-      });
-    }
-  });
-/* -------------------- FEES -------------------- */
-const ConsultationFeeSchema = z.object({
-  inPerson: z.number().min(0, "In-person fee cannot be negative").optional(),
-  online: z.number().min(0, "Online fee cannot be negative").optional(),
-  currency: z
-    .string()
-    .length(3, "Currency must be a 3-letter ISO code (e.g., INR)")
-    .optional(),
-});
+// const weekDays = [
+//   "Monday",
+//   "Tuesday",
+//   "Wednesday",
+//   "Thursday",
+//   "Friday",
+//   "Saturday",
+//   "Sunday",
+// ] as const;
+// const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+// const WorkingHourSchema = z
+//   .object({
+//     day: z.enum(weekDays, {
+//       message: "Invalid day of week",
+//     }),
+//     startTime: z
+//       .string()
+//       .min(1, "Start time is required")
+//       .regex(timeRegex, "Start time must be in HH:mm format"),
+//     endTime: z
+//       .string()
+//       .min(1, "End time is required")
+//       .regex(timeRegex, "End time must be in HH:mm format"),
+//     isAvailable: z.boolean().optional(),
+//   })
+//   .superRefine((data, ctx) => {
+//     if (data.startTime >= data.endTime) {
+//       ctx.addIssue({
+//         code: z.ZodIssueCode.custom,
+//         path: ["endTime"],
+//         message: "End time must be after start time",
+//       });
+//     }
+//   });
+// /* -------------------- FEES -------------------- */
+// const ConsultationFeeSchema = z.object({
+//   inPerson: z.number().min(0, "In-person fee cannot be negative").optional(),
+//   online: z.number().min(0, "Online fee cannot be negative").optional(),
+//   currency: z
+//     .string()
+//     .length(3, "Currency must be a 3-letter ISO code (e.g., INR)")
+//     .optional(),
+// });
 const ContactSchema = z.object({
   phone: z
     .string()
@@ -221,11 +221,11 @@ export const FormAdminSchema = z.object({
   medications: z
     .array(z.string().min(1, "Medication cannot be empty"))
     .optional(),
-  consultationFee: ConsultationFeeSchema.optional(),
-  workingHours: z
-    .array(WorkingHourSchema)
-    .min(1, "At least one working day is required")
-    .optional(),
+  // consultationFee: ConsultationFeeSchema.optional(),
+  // workingHours: z
+  //   .array(WorkingHourSchema)
+  //   .min(1, "At least one working day is required")
+  //   .optional(),
   licenseNumber: z
     .string()
     .min(5, "License number must be at least 5 characters")

@@ -1,30 +1,40 @@
-interface IWorkingHour {
-  day: string;
+export type Gender = "Male" | "Female" | "Other";
+export type WeekDay =
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday"
+  | "Sunday";
+export interface IWorkingHour {
+  day: WeekDay | "";
   startTime: string;
   endTime: string;
   isAvailable?: boolean;
 }
-interface IConsultationFee {
-  inPerson?: number;
-  online?: number;
-  currency?: string;
+export interface IConsultationFee {
+  inPerson: string;
+  online: string;
+  currency: string;
 }
-interface IContact {
-  phone?: string;
-  email?: string;
+export interface IContact {
+  phone: string;
+  email: string;
 }
 export interface IDoctor {
   _id?: string;
   doctorId?: string;
   fullName: string;
-  gender?: string;
+  gender?: Gender;
   department: string;
   specialization: string[];
-  experience?: number;
+  experience?: string;
   qualification?: string;
   languagesSpoken?: string[];
-  contact?: IContact;
-  consultationFee?: IConsultationFee;
+  contact: IContact;
+  consultationFee: IConsultationFee;
   workingHours: IWorkingHour[];
   accountStatus?: "pending" | "active" | "suspended";
+  joiningDate: string;
 }

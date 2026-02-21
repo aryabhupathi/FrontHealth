@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import {
   Box,
@@ -16,7 +15,6 @@ import {
   PaginationBox,
   PatientContainer,
 } from "../../components/styledcomp";
-import { useDoctorForm } from "../../hooks/useDoctorForm";
 import { DoctorFilters } from "../../components/Filters/DoctorFilters";
 import { DoctorCards } from "../../components/Cards/DoctorCard";
 import { DoctorTable } from "../../components/Tables/DoctorTable";
@@ -37,36 +35,34 @@ export default function DoctorPage() {
     doctorsPerPage,
     doctors,
   } = useDoctor();
-  const form = useDoctorForm();
   const [showModal, setShowModal] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<IDoctor | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width:900px)");
-  const normalizeDoctorForForm = (doctor: IDoctor): IDoctor => ({
-    ...doctor,
-    fullName: String(doctor.fullName ?? ""),
-    gender: String(doctor.gender ?? ""),
-    contact: {
-      phone: String(doctor.contact?.phone ?? ""),
-      email: String(doctor.contact?.email ?? ""),
-    },
-  });
   const handleAdd = () => {
     setEditingDoctor(null);
-    form.reset();
     setShowModal(true);
   };
   const handleEdit = (doctor: IDoctor) => {
     setEditingDoctor(doctor);
-    form.setFormData(normalizeDoctorForForm(doctor));
     setShowModal(true);
   };
   const handleDelete = async (id?: string) => {
-    if (!id || !window.confirm("Delete this doctor?")) return;
-    await fetch(`${import.meta.env.VITE_BACK_URL}/doctor/${id}`, {
-      method: "DELETE",
-    });
-    fetchDoctors();
+    if (!id) return;
+    if (!window.confirm("Delete this doctor?")) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACK_URL}/doctor/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete doctor");
+      }
+      await fetchDoctors();
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : "Unexpected error occurred",
+      );
+    }
   };
   const handleSubmit = async (doctor: IDoctor, id?: string) => {
     const method = id ? "PUT" : "POST";
@@ -86,13 +82,15 @@ export default function DoctorPage() {
       await fetchDoctors();
       setShowModal(false);
       setEditingDoctor(null);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : "Unexpected error occurred",
+      );
     }
   };
   return (
     <PatientContainer>
-      <PageTitle variant="h5">Patients</PageTitle>
+      <PageTitle variant="h5">Doctors</PageTitle>
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center" gap={1}>
           <Typography variant="body2">Filters</Typography>
@@ -127,12 +125,7 @@ export default function DoctorPage() {
           onDelete={handleDelete}
         />
       ) : (
-        <Paper
-          variant="outlined"
-          sx={{
-            overflow: "auto",
-          }}
-        >
+        <Paper variant="outlined" sx={{ overflow: "auto" }}>
           <DoctorTable
             doctors={paginatedDoctors}
             onEdit={handleEdit}
